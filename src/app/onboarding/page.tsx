@@ -154,12 +154,18 @@ export default function OnboardingPage() {
                     <button
                       key={option.id}
                       onClick={() => toggle(option.id)}
+                      aria-pressed={isSelected}
                       className={
                         isSelected
-                          ? "flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white p-2 text-center text-xs font-semibold text-lf-ocean shadow"
-                          : "flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white/15 p-2 text-center text-xs font-semibold text-white"
+                          ? "relative flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white p-2 text-center text-xs font-semibold text-lf-ocean shadow"
+                          : "relative flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl bg-white/15 p-2 text-center text-xs font-semibold text-white"
                       }
                     >
+                      {isSelected && (
+                        <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-lf-ocean text-[10px] text-white">
+                          ✓
+                        </span>
+                      )}
                       <span className="text-xl">{option.icon}</span>
                       <span className="leading-tight">{option.label}</span>
                     </button>
@@ -169,7 +175,7 @@ export default function OnboardingPage() {
             </div>
           ))}
         </div>
-        <div className="border-t border-white/10 p-6 pb-8">
+        <div className="sticky bottom-0 border-t border-white/10 bg-lf-ocean p-6 pb-8">
           <button
             onClick={() => setStep("done")}
             className="w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-ocean"
