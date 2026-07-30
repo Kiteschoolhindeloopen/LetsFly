@@ -1,0 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+:root {
+  --text: oklch(22% 0.02 240);
+  --background: oklch(96% 0.012 85);
+  --primary: oklch(45% 0.11 210);
+  --secondary: oklch(78% 0.11 70);
+  --accent: oklch(65% 0.14 55);
+
+  --foreground: var(--text);
+  --lf-ocean: var(--primary);
+  --lf-ocean-dark: oklch(38% 0.11 210);
+  --lf-ocean-light: oklch(94% 0.04 200);
+  --lf-sand: var(--secondary);
+  --lf-sand-dark: var(--accent);
+  --lf-navy: oklch(22% 0.03 235);
+  --lf-card: #ffffff;
+  --lf-border: oklch(92% 0.01 220);
+  --lf-muted: oklch(55% 0.01 220);
+}
+
+@theme inline {
+  --color-text: var(--text);
+  --color-background: var(--background);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-foreground: var(--foreground);
+  --color-lf-ocean: var(--lf-ocean);
+  --color-lf-ocean-dark: var(--lf-ocean-dark);
+  --color-lf-ocean-light: var(--lf-ocean-light);
+  --color-lf-sand: var(--lf-sand);
+  --color-lf-sand-dark: var(--lf-sand-dark);
+  --color-lf-navy: var(--lf-navy);
+  --color-lf-card: var(--lf-card);
+  --color-lf-border: var(--lf-border);
+  --color-lf-muted: var(--lf-muted);
+  --font-sans: "Manrope", var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(18% 0.02 240);
+    --foreground: oklch(94% 0.01 220);
+    --lf-card: oklch(24% 0.02 240);
+    --lf-border: oklch(32% 0.02 235);
+    --lf-muted: oklch(65% 0.01 220);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

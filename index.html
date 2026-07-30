@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:oklch(96% 0.012 85);font-family:'Manrope',system-ui,sans-serif}
+  a{color:oklch(45% 0.11 210);text-decoration:none}
+  a:hover{color:oklch(38% 0.11 210)}
+  ::-webkit-scrollbar{display:none}
+  .lf-scroll{scrollbar-width:none}
+
+  button{transition:transform .15s ease, background-color .15s ease, box-shadow .15s ease, border-color .15s ease, opacity .15s ease}
+  button:active{transform:scale(0.97)}
+
+  .lf-tap{transition:transform .15s ease, opacity .15s ease}
+  .lf-tap:active{transform:scale(0.96)}
+
+  @keyframes lfFadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .lf-screen-enter{animation:lfFadeSlideIn .4s cubic-bezier(.22,1,.36,1)}
+
+  @keyframes lfSheetUp{from{opacity:0;transform:translateY(46px)}to{opacity:1;transform:translateY(0)}}
+  .lf-sheet-enter{animation:lfSheetUp .42s cubic-bezier(.34,1.56,.64,1)}
+
+  @keyframes lfBackdropIn{from{opacity:0}to{opacity:1}}
+  .lf-backdrop-enter{animation:lfBackdropIn .22s ease}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center">
+
+  <div style="width:100%;background:oklch(22% 0.03 235);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 12px;position:sticky;top:0;z-index:200;font-size:11px">
+    <span style="opacity:.55;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-right:6px">Prototyp-Ansicht</span>
+    <button onClick="{{ selectRoleKunde }}" style="{{ roleBtnStyleKunde }}">Kunde</button>
+    <button onClick="{{ selectRoleLehrer }}" style="{{ roleBtnStyleLehrer }}">Lehrer</button>
+    <button onClick="{{ selectRoleAdmin }}" style="{{ roleBtnStyleAdmin }}">Admin</button>
+  </div>
+
+  <div style="width:100%;max-width:480px;background:#fff;box-shadow:0 0 0 1px oklch(92% 0.01 220),0 24px 60px -20px oklch(30% 0.05 220 / 0.25);min-height:calc(100vh - 41px);display:flex;flex-direction:column;position:relative">
+
+    <sc-if value="{{ isKunde }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;flex-direction:column">
+
+        <sc-if value="{{ kScreenIs.login }}">
+          <div class="lf-screen-enter" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:48px 32px;background:linear-gradient(180deg, oklch(94% 0.04 200) 0%, #fff 55%)">
+            <div style="width:56px;height:56px;border-radius:16px;background:oklch(45% 0.11 210);display:flex;align-items:center;justify-content:center;margin-bottom:24px;overflow:hidden">
+              <img src="https://kiteschoolhindeloopen.com/images/logo.webp" alt="LetsFly Logo" style="width:70%;height:70%;object-fit:contain" />
+            </div>
+            <div style="font-size:28px;font-weight:800;color:oklch(22% 0.02 240);letter-spacing:-0.01em">LetsFly Kiteschule</div>
+            <div style="font-size:14px;color:oklch(45% 0.02 240);margin-top:6px;margin-bottom:36px">Kitesurfen lernen am IJsselmeer</div>
+
+            <label style="font-size:12px;font-weight:600;color:oklch(35% 0.02 240);margin-bottom:6px">E-Mail-Adresse</label>
+            <input value="{{ loginEmail }}" onChange="{{ onEmailChange }}" placeholder="lisa.meyer@email.de" style="width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid oklch(90% 0.01 220);font-size:15px;font-family:inherit;margin-bottom:14px;outline:none" />
+            <button onClick="{{ doLogin }}" style="width:100%;padding:15px;border-radius:12px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer">Anmelden</button>
+            <div style="text-align:center;font-size:12.5px;color:oklch(55% 0.01 220);margin-top:18px">Noch kein Konto? <a href="#">Jetzt registrieren</a></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ kScreenIs.onboarding }}">
+          <div class="lf-screen-enter" style="flex:1;display:flex;flex-direction:column;padding:0">
+            <img src="https://kiteschoolhindeloopen.com/images/kite1.webp" alt="Kitesurfer im Wassersprung, IJsselmeer" style="width:100%;height:340px;border-radius:0;object-fit:cover;display:block" />
+            <div style="flex:1;display:flex;flex-direction:column;padding:32px;justify-content:space-between">
+              <div>
+                <div style="font-size:24px;font-weight:800;color:oklch(22% 0.02 240);margin-bottom:10px">Willkommen bei LetsFly, Lisa! 🌊</div>
+                <div style="font-size:14.5px;line-height:1.6;color:oklch(45% 0.02 240)">Hier verwaltest du deine gebuchten Kurstermine, siehst deinen Stundenkontostand und schaust dir Lernvideos zu jedem Level an. Bei schlechtem Wind sagen wir automatisch ab und du buchst einfach neu.</div>
+              </div>
+              <button onClick="{{ finishOnboarding }}" style="width:100%;padding:16px;border-radius:12px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:24px">Los geht's</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ kScreenIs.dashboard }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding-bottom:90px">
+            <div style="position:relative;padding:24px 20px 28px;color:#fff;border-radius:0 0 28px 28px;overflow:hidden;background:oklch(30% 0.05 210)">
+              <img src="https://kiteschoolhindeloopen.com/images/kitesurf-bg.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0" />
+              <div style="position:absolute;inset:0;background:linear-gradient(150deg, oklch(38% 0.1 210 / 0.92) 10%, oklch(45% 0.09 195 / 0.75) 60%, oklch(50% 0.09 190 / 0.55) 100%);z-index:1"></div>
+              <div style="position:relative;z-index:2">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+                  <div>
+                    <div style="font-size:12.5px;opacity:.85">Willkommen zurück</div>
+                    <div style="font-size:20px;font-weight:800">Lisa Meyer</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <button onClick="{{ openNotifPanel }}" style="position:relative;width:40px;height:40px;border-radius:50%;border:none;background:oklch(100% 0 0 / 0.16);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">
+                      🔔
+                      <sc-if value="{{ hasUnreadNotifs }}" hint-placeholder-val="{{ false }}">
+                        <span style="position:absolute;top:6px;right:7px;width:9px;height:9px;border-radius:50%;background:oklch(65% 0.19 30);border:2px solid oklch(38% 0.1 210)"></span>
+                      </sc-if>
+                    </button>
+                    <div style="width:42px;height:42px;border-radius:50%;background:oklch(78% 0.11 70);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:oklch(25% 0.05 60);box-shadow:0 4px 14px -4px oklch(20% 0.05 60 / 0.5)">LM</div>
+                  </div>
+                </div>
+
+                <div style="background:oklch(100% 0 0 / 0.14);backdrop-filter:blur(10px);border-radius:16px;padding:16px;box-shadow:0 8px 24px -8px oklch(20% 0.1 220 / 0.4)">
+                  <div style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-bottom:8px">Nächster Termin</div>
+                  <div style="font-size:17px;font-weight:800">{{ nextAppointment.date }}</div>
+                  <div style="font-size:14px;opacity:.92;margin-top:2px">{{ nextAppointment.time }} · {{ nextAppointment.spot }}</div>
+                  <div style="font-size:13px;opacity:.8;margin-top:6px">mit {{ nextAppointment.teacher }}</div>
+                </div>
+              </div>
+            </div>
+
+            <sc-if value="{{ showWindBanner }}">
+              <div style="margin:16px 20px 0;background:oklch(96% 0.05 55);border:1px solid oklch(80% 0.1 55);border-radius:14px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start">
+                <div style="font-size:18px;line-height:1">💨</div>
+                <div style="flex:1">
+                  <div style="font-size:13.5px;line-height:1.5;color:oklch(30% 0.05 50)">Dein Termin <strong>morgen 14:00 Uhr</strong> wurde wegen Windvorhersage abgesagt.</div>
+                  <div style="display:flex;gap:10px;margin-top:10px">
+                    <button onClick="{{ rebookFromBanner }}" style="padding:8px 14px;border-radius:9px;border:none;background:oklch(65% 0.14 55);color:#fff;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer">Jetzt neu buchen</button>
+                    <button onClick="{{ dismissBanner }}" style="padding:8px 14px;border-radius:9px;border:1px solid oklch(80% 0.1 55);background:transparent;color:oklch(35% 0.05 50);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">Ausblenden</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="margin:20px 20px 0;background:#fff;border:1px solid oklch(92% 0.01 220);border-radius:16px;padding:18px;box-shadow:0 4px 16px -4px oklch(30% 0.05 220 / 0.1)">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+                <div style="font-size:14.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ pkg.name }}</div>
+                <div style="font-size:12px;color:oklch(55% 0.01 220)">läuft ab {{ pkg.expiry }}</div>
+              </div>
+              <div style="font-size:12.5px;color:oklch(50% 0.01 220);margin-bottom:12px">{{ pkg.remaining }} von {{ pkg.total }} Stunden übrig</div>
+              <div style="height:10px;border-radius:6px;background:oklch(93% 0.01 220);overflow:hidden">
+                <div style="{{ pkgBarStyle }}"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11.5px;color:oklch(60% 0.01 220);margin-top:6px">
+                <span>{{ pkg.used }} Std. verbraucht</span>
+                <span>{{ pkg.remaining }} Std. verbleibend</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;margin:18px 20px 0">
+              <button onClick="{{ goToKalender }}" style="flex:1;padding:15px 10px;border-radius:14px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px">
+                <span style="font-size:18px">📅</span><span>Termin buchen</span>
+              </button>
+              <button onClick="{{ goToVideos }}" style="flex:1;padding:15px 10px;border-radius:14px;border:1.5px solid oklch(90% 0.01 220);background:#fff;color:oklch(22% 0.02 240);font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px">
+                <span style="font-size:18px">▶</span><span>Videos ansehen</span>
+              </button>
+            </div>
+
+            <div style="margin:24px 20px 0">
+              <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-bottom:10px">Meine Buchungen</div>
+              <sc-for list="{{ myBookings }}" as="b" hint-placeholder-count="2">
+                <div style="{{ b.cardStyle }}">
+                  <div style="width:44px;height:44px;border-radius:10px;background:oklch(94% 0.03 200);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+                    <div style="font-size:10px;font-weight:700;color:oklch(45% 0.11 210);text-transform:uppercase">{{ b.month }}</div>
+                    <div style="font-size:15px;font-weight:800;color:oklch(30% 0.1 210)">{{ b.day }}</div>
+                  </div>
+                  <div style="flex:1">
+                    <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ b.time }} · {{ b.spot }}</div>
+                    <div style="font-size:12px;color:oklch(55% 0.01 220);margin-top:2px">mit {{ b.teacher }}</div>
+                  </div>
+                  <sc-if value="{{ b.cancelled }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:11px;font-weight:700;color:oklch(55% 0.15 25);background:oklch(94% 0.05 25);padding:5px 9px;border-radius:8px">Abgesagt</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ kScreenIs.kalender }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding-bottom:90px">
+            <div style="position:relative;height:96px;overflow:hidden">
+              <img src="https://kiteschoolhindeloopen.com/images/bg-3.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />
+              <div style="position:absolute;inset:0;background:linear-gradient(90deg, oklch(30% 0.06 210 / 0.85), oklch(30% 0.06 210 / 0.15))"></div>
+              <div style="position:absolute;left:20px;bottom:14px;color:#fff">
+                <div style="font-size:20px;font-weight:800">Termin buchen</div>
+                <div style="font-size:12.5px;opacity:.9;margin-top:2px">Freie Zeitfenster sind grün markiert</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;padding:14px 20px 0">
+              <button onClick="{{ showKalenderPrivat }}" style="{{ kalenderTabStylePrivat }}">Privatstunden</button>
+              <button onClick="{{ showKalenderCamps }}" style="{{ kalenderTabStyleCamps }}">Kitecamps</button>
+            </div>
+
+            <sc-if value="{{ kalenderTabIs.privat }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px">
+                <button onClick="{{ prevWeek }}" style="width:34px;height:34px;border-radius:9px;border:1px solid oklch(90% 0.01 220);background:#fff;font-size:14px;cursor:pointer">‹</button>
+                <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ weekLabel }}</div>
+                <button onClick="{{ nextWeek }}" style="width:34px;height:34px;border-radius:9px;border:1px solid oklch(90% 0.01 220);background:#fff;font-size:14px;cursor:pointer">›</button>
+              </div>
+
+              <div style="padding:0 20px;display:flex;flex-direction:column;gap:14px">
+                <sc-for list="{{ weekDays }}" as="day" hint-placeholder-count="7">
+                  <div>
+                    <div style="font-size:12.5px;font-weight:700;color:oklch(35% 0.02 240);margin-bottom:8px">{{ day.label }}</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <sc-for list="{{ day.slots }}" as="slot" hint-placeholder-count="4">
+                        <button onClick="{{ slot.onClick }}" style="{{ slot.style }}">{{ slot.time }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ kalenderTabIs.camps }}">
+              <div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:16px">
+                <sc-for list="{{ camps }}" as="camp" hint-placeholder-count="3">
+                  <div style="border-radius:16px;overflow:hidden;border:1px solid oklch(92% 0.01 220);box-shadow:0 4px 16px -6px oklch(30% 0.05 220 / 0.15)">
+                    <img src="{{ camp.image }}" alt="{{ camp.name }}" style="width:100%;height:120px;object-fit:cover;display:block" />
+                    <div style="padding:14px">
+                      <div style="font-size:14.5px;font-weight:800;color:oklch(22% 0.02 240)">{{ camp.name }}</div>
+                      <div style="font-size:12.5px;color:oklch(50% 0.01 220);margin-top:3px">{{ camp.dateLabel }}</div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                        <span style="font-size:12.5px;font-weight:700;color:{{ camp.seatsColor }}">{{ camp.seatsLabel }}</span>
+                        <span style="font-size:14px;font-weight:800;color:oklch(45% 0.11 210)">{{ camp.priceLabel }}</span>
+                      </div>
+                      <button onClick="{{ camp.onClick }}" style="{{ camp.btnStyle }}">{{ camp.btnLabel }}</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ kScreenIs.videos }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding-bottom:90px">
+            <div style="padding:20px 20px 8px">
+              <div style="font-size:20px;font-weight:800;color:oklch(22% 0.02 240)">Video-Bibliothek</div>
+            </div>
+            <div class="lf-scroll" style="display:flex;gap:8px;overflow-x:auto;padding:12px 20px">
+              <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="6">
+                <button onClick="{{ cat.onClick }}" style="{{ cat.style }}">{{ cat.label }}</button>
+              </sc-for>
+            </div>
+            <div style="padding:8px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <sc-for list="{{ filteredVideos }}" as="v" hint-placeholder-count="6">
+                <div onClick="{{ v.onClick }}" class="lf-tap" style="cursor:pointer">
+                  <div style="position:relative;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px -6px oklch(30% 0.05 220 / 0.25)">
+                    <img src="{{ v.image }}" alt="{{ v.title }}" style="width:100%;height:96px;object-fit:cover;display:block" />
+                    <div style="position:absolute;bottom:6px;right:6px;background:oklch(15% 0.02 240 / 0.75);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;pointer-events:none">{{ v.duration }}</div>
+                    <sc-if value="{{ v.watched }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:oklch(65% 0.14 150);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;pointer-events:none">✓</div>
+                    </sc-if>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;color:oklch(45% 0.11 210);margin-top:8px">{{ v.category }}</div>
+                  <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-top:2px;line-height:1.3">{{ v.title }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ kScreenIs.videoDetail }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding-bottom:90px">
+            <div style="position:relative">
+              <img src="{{ activeVideo.image }}" alt="{{ activeVideo.title }}" style="width:100%;height:230px;object-fit:cover;display:block" />
+              <button onClick="{{ closeVideo }}" style="position:absolute;top:14px;left:14px;width:34px;height:34px;border-radius:50%;border:none;background:oklch(15% 0.02 240 / 0.55);color:#fff;font-size:15px;cursor:pointer">←</button>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                <div style="width:56px;height:56px;border-radius:50%;background:oklch(100% 0 0 / 0.85);display:flex;align-items:center;justify-content:center;font-size:20px;color:oklch(45% 0.11 210)">▶</div>
+              </div>
+            </div>
+            <div style="padding:20px">
+              <div style="font-size:11px;font-weight:700;color:oklch(45% 0.11 210)">{{ activeVideo.category }} · {{ activeVideo.duration }}</div>
+              <div style="font-size:19px;font-weight:800;color:oklch(22% 0.02 240);margin-top:4px">{{ activeVideo.title }}</div>
+              <div style="font-size:13.5px;line-height:1.6;color:oklch(45% 0.02 240);margin-top:12px">{{ activeVideo.description }}</div>
+
+              <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-top:26px;margin-bottom:12px">Verwandte Videos</div>
+              <sc-for list="{{ relatedVideos }}" as="v" hint-placeholder-count="3">
+                <div onClick="{{ v.onClick }}" class="lf-tap" style="display:flex;gap:12px;align-items:center;padding:8px 0;cursor:pointer">
+                  <img src="{{ v.image }}" alt="{{ v.title }}" style="width:64px;height:44px;flex-shrink:0;object-fit:cover;border-radius:8px;display:block" />
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">{{ v.title }}</div>
+                    <div style="font-size:11.5px;color:oklch(55% 0.01 220);margin-top:2px">{{ v.category }} · {{ v.duration }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ kScreenIs.profil }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding-bottom:90px">
+            <div style="padding:24px 20px 16px;display:flex;align-items:center;gap:14px">
+              <div style="width:56px;height:56px;border-radius:50%;background:oklch(94% 0.03 200);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:oklch(45% 0.11 210)">LM</div>
+              <div>
+                <div style="font-size:17px;font-weight:800;color:oklch(22% 0.02 240)">Lisa Meyer</div>
+                <div style="font-size:12.5px;color:oklch(55% 0.01 220)">lisa.meyer@email.de</div>
+              </div>
+            </div>
+
+            <div style="margin:8px 20px;background:oklch(96% 0.02 200);border-radius:16px;padding:16px">
+              <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">{{ pkg.name }}</div>
+              <div style="font-size:12px;color:oklch(50% 0.01 220);margin-top:4px">{{ pkg.remaining }} von {{ pkg.total }} Stunden übrig · läuft ab {{ pkg.expiry }}</div>
+            </div>
+
+            <div style="margin:22px 20px 10px;font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">Weitere Kurse & Camps</div>
+            <div style="margin:0 20px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ upsellPackages }}" as="p" hint-placeholder-count="3">
+                <div style="border:1px solid oklch(92% 0.01 220);border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 12px -6px oklch(30% 0.05 220 / 0.12)">
+                  <div>
+                    <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ p.name }}</div>
+                    <div style="font-size:12px;color:oklch(55% 0.01 220);margin-top:2px">{{ p.desc }}</div>
+                  </div>
+                  <div style="font-size:14px;font-weight:800;color:oklch(45% 0.11 210);white-space:nowrap;margin-left:12px">{{ p.price }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin:22px 20px 10px;font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">Meine Buchungshistorie</div>
+            <div style="margin:0 20px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ historyBookings }}" as="h" hint-placeholder-count="2">
+                <div style="border:1px solid oklch(92% 0.01 220);border-radius:14px;padding:14px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline">
+                    <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ h.day }} · {{ h.time }}</div>
+                    <div style="{{ h.badgeStyle }}">{{ h.badgeLabel }}</div>
+                  </div>
+                  <div style="font-size:12px;color:oklch(55% 0.01 220);margin-top:2px">{{ h.spot }} · mit {{ h.teacher }}</div>
+                  <sc-if value="{{ h.showStars }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;gap:4px;margin-top:8px">
+                      <sc-for list="{{ h.stars }}" as="star" hint-placeholder-count="5">
+                        <span onClick="{{ star.onClick }}" style="font-size:18px;cursor:pointer;color:oklch(78% 0.11 70)">{{ star.icon }}</span>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin:26px 20px 0;border-top:1px solid oklch(92% 0.01 220);padding-top:10px">
+              <div style="padding:14px 4px;font-size:13.5px;font-weight:600;color:oklch(30% 0.02 240)">Zahlungsmethoden</div>
+              <button onClick="{{ logout }}" style="width:100%;text-align:left;padding:14px 4px;font-size:13.5px;font-weight:600;color:oklch(55% 0.15 25);background:none;border:none;font-family:inherit;cursor:pointer">Abmelden</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showTabBar }}">
+          <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid oklch(92% 0.01 220);display:flex;padding:8px 4px calc(8px + env(safe-area-inset-bottom))">
+            <div style="{{ tabIndicatorStyle }}"></div>
+            <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+              <button onClick="{{ tab.onClick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;background:none;border:none;font-family:inherit;cursor:pointer">
+                <span style="{{ tab.iconStyle }}">{{ tab.icon }}</span>
+                <span style="{{ tab.labelStyle }}">{{ tab.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ bookingModal }}" hint-placeholder-val="{{ false }}">
+          <div class="lf-backdrop-enter" style="position:absolute;inset:0;background:oklch(15% 0.02 240 / 0.45);display:flex;align-items:flex-end;z-index:50">
+            <div class="lf-sheet-enter" style="width:100%;background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 28px;box-shadow:0 -12px 40px -12px oklch(20% 0.05 220 / 0.35)">
+              <div style="width:36px;height:4px;border-radius:2px;background:oklch(90% 0.01 220);margin:0 auto 18px"></div>
+              <sc-if value="{{ bookingModal.confirmed }}" hint-placeholder-val="{{ false }}">
+                <div style="text-align:center;padding:12px 0">
+                  <div style="width:52px;height:52px;border-radius:50%;background:oklch(90% 0.08 150);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 14px;color:oklch(45% 0.15 150)">✓</div>
+                  <sc-if value="{{ bookingModal.kind === 'camp' }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 240)">Platz gebucht!</div>
+                    <div style="font-size:13px;color:oklch(50% 0.01 220);margin-top:6px">{{ bookingModal.name }} · {{ bookingModal.dateLabel }}</div>
+                  </sc-if>
+                  <sc-if value="{{ bookingModal.kind !== 'camp' }}" hint-placeholder-val="{{ true }}">
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 240)">Termin gebucht!</div>
+                    <div style="font-size:13px;color:oklch(50% 0.01 220);margin-top:6px">{{ bookingModal.day }}, {{ bookingModal.time }} · 1 Stunde von deinem Paket abgezogen</div>
+                  </sc-if>
+                  <button onClick="{{ closeModal }}" style="width:100%;margin-top:20px;padding:14px;border-radius:12px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer">Fertig</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ !bookingModal.confirmed }}" hint-placeholder-val="{{ true }}">
+                <sc-if value="{{ bookingModal.mode === 'new' }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 240)">Termin bestätigen</div>
+                    <div style="font-size:13.5px;color:oklch(50% 0.01 220);margin-top:4px;margin-bottom:16px">{{ bookingModal.day }} · {{ bookingModal.time }}</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;background:oklch(97% 0.01 85);border-radius:14px;padding:14px">
+                      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:oklch(55% 0.01 220)">Lehrer</span><span style="font-weight:700;color:oklch(22% 0.02 240)">{{ bookingModal.teacher }}</span></div>
+                      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:oklch(55% 0.01 220)">Spot</span><span style="font-weight:700;color:oklch(22% 0.02 240)">{{ bookingModal.spot }}</span></div>
+                      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:oklch(55% 0.01 220)">Kosten</span><span style="font-weight:700;color:oklch(22% 0.02 240)">1 Stunde vom Paket</span></div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:20px">
+                      <button onClick="{{ closeModal }}" style="flex:1;padding:14px;border-radius:12px;border:1.5px solid oklch(90% 0.01 220);background:#fff;color:oklch(30% 0.02 240);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Abbrechen</button>
+                      <button onClick="{{ confirmBooking }}" style="flex:1;padding:14px;border-radius:12px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Bestätigen</button>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ bookingModal.kind === 'camp' }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 240)">Platz buchen</div>
+                    <div style="font-size:13.5px;color:oklch(50% 0.01 220);margin-top:4px;margin-bottom:16px">{{ bookingModal.name }}</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;background:oklch(97% 0.01 85);border-radius:14px;padding:14px">
+                      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:oklch(55% 0.01 220)">Termin</span><span style="font-weight:700;color:oklch(22% 0.02 240)">{{ bookingModal.dateLabel }}</span></div>
+                      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:oklch(55% 0.01 220)">Preis</span><span style="font-weight:700;color:oklch(22% 0.02 240)">{{ bookingModal.priceLabel }}</span></div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:20px">
+                      <button onClick="{{ closeModal }}" style="flex:1;padding:14px;border-radius:12px;border:1.5px solid oklch(90% 0.01 220);background:#fff;color:oklch(30% 0.02 240);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Abbrechen</button>
+                      <button onClick="{{ confirmCampBooking }}" style="flex:1;padding:14px;border-radius:12px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Platz buchen</button>
+                    </div>
+                  </div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ bookingModal.mode === 'manage' }}" hint-placeholder-val="{{ false }}">
+                <div>
+                  <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 240)">Dein Termin</div>
+                  <div style="font-size:13.5px;color:oklch(50% 0.01 220);margin-top:4px;margin-bottom:16px">{{ bookingModal.day }} · {{ bookingModal.time }} · mit {{ bookingModal.teacher }}</div>
+                  <button onClick="{{ closeModal }}" style="width:100%;padding:14px;border-radius:12px;border:1.5px solid oklch(90% 0.01 220);background:#fff;color:oklch(30% 0.02 240);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px">Umbuchen</button>
+                  <button onClick="{{ cancelBooking }}" style="width:100%;padding:14px;border-radius:12px;border:none;background:oklch(94% 0.05 25);color:oklch(50% 0.15 25);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Termin stornieren</button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ notifPanelOpen }}" hint-placeholder-val="{{ false }}">
+          <div class="lf-backdrop-enter" style="position:absolute;inset:0;background:oklch(15% 0.02 240 / 0.45);display:flex;align-items:flex-end;z-index:60">
+            <div class="lf-sheet-enter" style="width:100%;background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 28px;max-height:72vh;display:flex;flex-direction:column">
+              <div style="width:36px;height:4px;border-radius:2px;background:oklch(90% 0.01 220);margin:0 auto 18px;flex-shrink:0"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-shrink:0">
+                <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 240)">Benachrichtigungen</div>
+                <button onClick="{{ markAllNotifsRead }}" style="font-size:12px;font-weight:700;color:oklch(45% 0.11 210);background:none;border:none;cursor:pointer;font-family:inherit">Alle gelesen</button>
+              </div>
+              <div class="lf-scroll" style="overflow-y:auto;display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="4">
+                  <div style="{{ n.rowStyle }}">
+                    <div style="font-size:18px;flex-shrink:0">{{ n.icon }}</div>
+                    <div style="flex:1">
+                      <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ n.title }}</div>
+                      <div style="font-size:12.5px;color:oklch(50% 0.01 220);margin-top:2px;line-height:1.4">{{ n.message }}</div>
+                      <div style="font-size:11px;color:oklch(60% 0.01 220);margin-top:4px">{{ n.time }}</div>
+                    </div>
+                    <sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:8px;height:8px;border-radius:50%;background:oklch(65% 0.19 30);flex-shrink:0;margin-top:4px"></div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <button onClick="{{ closeNotifPanel }}" style="width:100%;margin-top:16px;padding:14px;border-radius:12px;border:1.5px solid oklch(90% 0.01 220);background:#fff;color:oklch(30% 0.02 240);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0">Schließen</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isLehrer }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div style="padding:24px 20px 0">
+          <div style="font-size:12.5px;color:oklch(55% 0.01 220)">Lehrer-Bereich</div>
+          <div style="font-size:20px;font-weight:800;color:oklch(22% 0.02 240);margin-top:2px">Merlin Muhra</div>
+        </div>
+        <div style="margin:14px 20px 0;border-radius:16px;overflow:hidden;height:80px;position:relative;box-shadow:0 4px 16px -6px oklch(30% 0.05 220 / 0.2)">
+          <img src="https://kiteschoolhindeloopen.com/images/kite2.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg, oklch(25% 0.06 210 / 0.6), transparent)"></div>
+        </div>
+        <div style="display:flex;gap:8px;padding:16px 20px 10px">
+          <button onClick="{{ showLScreenVerfuegbarkeit }}" style="{{ lTabStyleVerfuegbarkeit }}">Verfügbarkeit</button>
+          <button onClick="{{ showLScreenSchueler }}" style="{{ lTabStyleSchueler }}">Meine Schüler</button>
+        </div>
+
+        <sc-if value="{{ lScreenIs.verfuegbarkeit }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding:6px 20px 24px">
+            <div style="font-size:12.5px;color:oklch(50% 0.01 220);margin-bottom:14px">Tippe auf ein Zeitfenster, um es für Schüler freizugeben oder zu blockieren.</div>
+            <sc-for list="{{ teacherWeek }}" as="day" hint-placeholder-count="7">
+              <div style="margin-bottom:14px">
+                <div style="font-size:12.5px;font-weight:700;color:oklch(35% 0.02 240);margin-bottom:8px">{{ day.label }}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ day.slots }}" as="slot" hint-placeholder-count="4">
+                    <button onClick="{{ slot.onClick }}" style="{{ slot.style }}">{{ slot.time }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ lScreenIs.schueler }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding:6px 20px 24px">
+            <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-bottom:12px">Heute zugeteilt · {{ todayLabel }}</div>
+            <sc-for list="{{ todayStudents }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid oklch(94% 0.01 220)">
+                <div style="width:40px;height:40px;border-radius:50%;background:oklch(94% 0.03 200);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:oklch(45% 0.11 210)">{{ s.initials }}</div>
+                <div style="flex:1">
+                  <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 240)">{{ s.name }}</div>
+                  <div style="font-size:12px;color:oklch(55% 0.01 220);margin-top:2px">{{ s.time }} · {{ s.spot }}</div>
+                </div>
+                <div style="{{ s.levelStyle }}">{{ s.level }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column">
+        <div style="padding:24px 20px 0">
+          <div style="font-size:12.5px;color:oklch(55% 0.01 220)">Admin-Bereich</div>
+          <div style="font-size:20px;font-weight:800;color:oklch(22% 0.02 240);margin-top:2px">LetsFly Verwaltung</div>
+        </div>
+        <div style="margin:14px 20px 0;border-radius:16px;overflow:hidden;height:80px;position:relative;box-shadow:0 4px 16px -6px oklch(30% 0.05 220 / 0.2)">
+          <img src="https://kiteschoolhindeloopen.com/images/kite3.webp" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg, oklch(25% 0.06 210 / 0.6), transparent)"></div>
+        </div>
+        <div class="lf-scroll" style="display:flex;gap:8px;padding:16px 20px 10px;overflow-x:auto">
+          <button onClick="{{ showAScreenUebersicht }}" style="{{ aTabStyleUebersicht }}">Übersicht</button>
+          <button onClick="{{ showAScreenWind }}" style="{{ aTabStyleWind }}">Wind-Absage</button>
+          <button onClick="{{ showAScreenVerwaltung }}" style="{{ aTabStyleVerwaltung }}">Verwaltung</button>
+        </div>
+
+        <sc-if value="{{ aScreenIs.uebersicht }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding:6px 20px 24px">
+            <div style="display:flex;gap:10px;margin-bottom:18px">
+              <div style="flex:1;background:oklch(96% 0.02 200);border-radius:14px;padding:14px;box-shadow:0 3px 12px -6px oklch(30% 0.05 220 / 0.15)">
+                <div style="font-size:22px;font-weight:800;color:oklch(30% 0.1 210)">{{ stats.today }}</div>
+                <div style="font-size:11.5px;color:oklch(50% 0.01 220);margin-top:2px">Termine heute</div>
+              </div>
+              <div style="flex:1;background:oklch(96% 0.03 70);border-radius:14px;padding:14px;box-shadow:0 3px 12px -6px oklch(45% 0.1 60 / 0.15)">
+                <div style="font-size:22px;font-weight:800;color:oklch(45% 0.13 55)">{{ stats.week }}</div>
+                <div style="font-size:11.5px;color:oklch(50% 0.01 220);margin-top:2px">Termine diese Woche</div>
+              </div>
+            </div>
+            <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-bottom:10px">Buchungen heute</div>
+            <sc-for list="{{ allBookingsToday }}" as="b" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid oklch(94% 0.01 220)">
+                <div style="font-size:12.5px;font-weight:700;color:oklch(45% 0.11 210);width:50px;flex-shrink:0">{{ b.time }}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">{{ b.customer }}</div>
+                  <div style="font-size:11.5px;color:oklch(55% 0.01 220)">{{ b.teacher }} · {{ b.spot }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ aScreenIs.wind }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding:6px 20px 24px">
+            <div style="font-size:13px;color:oklch(50% 0.01 220);margin-bottom:14px;line-height:1.5">Zeitraum wählen — betroffene Termine werden automatisch abgesagt und Kunden per Nachricht informiert.</div>
+            <div style="display:flex;gap:8px;margin-bottom:18px">
+              <sc-for list="{{ windPresets }}" as="p" hint-placeholder-count="3">
+                <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ windAffected }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-bottom:10px">{{ windAffected.length }} betroffene Termine</div>
+                <sc-for list="{{ windAffected }}" as="b" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid oklch(94% 0.01 220)">
+                    <div style="font-size:12.5px;font-weight:700;color:oklch(50% 0.15 25);width:70px;flex-shrink:0">{{ b.time }}</div>
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">{{ b.customer }}</div>
+                      <div style="font-size:11.5px;color:oklch(55% 0.01 220)">{{ b.teacher }} · {{ b.spot }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ windCancelledDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:16px;background:oklch(94% 0.05 145);border-radius:12px;padding:14px;font-size:13px;font-weight:700;color:oklch(35% 0.1 150);text-align:center">✓ Alle Termine abgesagt · Kunden benachrichtigt</div>
+                </sc-if>
+                <sc-if value="{{ !windCancelledDone }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ confirmWindCancel }}" style="width:100%;margin-top:16px;padding:15px;border-radius:12px;border:none;background:oklch(50% 0.15 25);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Alle absagen & Kunden benachrichtigen</button>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ aScreenIs.verwaltung }}">
+          <div class="lf-scroll lf-screen-enter" style="flex:1;overflow-y:auto;padding:6px 20px 24px">
+            <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin-bottom:10px">Pakete & Preise</div>
+            <sc-for list="{{ allPackages }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid oklch(94% 0.01 220)">
+                <div style="font-size:13px;font-weight:600;color:oklch(30% 0.02 240)">{{ p.name }}</div>
+                <div style="font-size:13px;font-weight:800;color:oklch(45% 0.11 210)">{{ p.price }}</div>
+              </div>
+            </sc-for>
+
+            <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240);margin:22px 0 10px">Lehrer-Team</div>
+            <sc-for list="{{ allTeachers }}" as="t" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 0">
+                <div style="width:34px;height:34px;border-radius:50%;background:oklch(94% 0.03 200);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:oklch(45% 0.11 210)">{{ t.initials }}</div>
+                <div style="font-size:13px;font-weight:600;color:oklch(30% 0.02 240)">{{ t.name }}</div>
+              </div>
+            </sc-for>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px">
+              <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 240)">Video-Bibliothek</div>
+              <button style="padding:7px 12px;border-radius:8px;border:1.5px solid oklch(90% 0.01 220);background:#fff;font-size:11.5px;font-weight:700;color:oklch(35% 0.02 240);font-family:inherit;cursor:pointer">+ Video hochladen</button>
+            </div>
+            <sc-for list="{{ allVideosAdmin }}" as="v" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid oklch(94% 0.01 220)">
+                <div>
+                  <div style="font-size:12.5px;font-weight:600;color:oklch(30% 0.02 240)">{{ v.title }}</div>
+                  <div style="font-size:11px;color:oklch(55% 0.01 220);margin-top:1px">{{ v.category }}</div>
+                </div>
+                <div style="font-size:11px;color:oklch(55% 0.01 220)">{{ v.duration }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TEACHERS = ['Merlin Muhra', 'Tom Feddersen', 'Anna Berg'];
+const SPOTS = ['Hindeloopen', 'Workum', 'Mirns', 'Kornwerderzand'];
+const CATS = ['Sicherheit & Material', 'Wasserstart', 'Bodydrag', 'Erste Fahrversuche', 'Tricks & Fortgeschritten', 'Wind- & Wetterkunde'];
+
+const IMG = {
+  logo: 'https://kiteschoolhindeloopen.com/images/logo.webp',
+  heroBg: 'https://kiteschoolhindeloopen.com/images/kitesurf-bg.webp',
+  beginnerBg: 'https://kiteschoolhindeloopen.com/images/bg-3.webp',
+  advancedBg: 'https://kiteschoolhindeloopen.com/images/bg-4.webp',
+  intensiveBg: 'https://kiteschoolhindeloopen.com/images/bg-5.webp',
+  kite1: 'https://kiteschoolhindeloopen.com/images/kite1.webp',
+  kite2: 'https://kiteschoolhindeloopen.com/images/kite2.webp',
+  kite3: 'https://kiteschoolhindeloopen.com/images/kite3.webp',
+};
+
+const VIDEOS = [
+  { id: 1, title: 'Kite-Check vor dem Start', category: 'Sicherheit & Material', duration: '6:12', watched: true, image: IMG.beginnerBg, description: 'So prüfst du Leinen, Aufhängung und Sicherheitssystem vor jeder Session – die wichtigste Routine, bevor du überhaupt ins Wasser gehst.' },
+  { id: 2, title: 'Trapez richtig anlegen', category: 'Sicherheit & Material', duration: '3:40', watched: true, image: IMG.kite2, description: 'Sitzhöhe, Hakenposition und Quick-Release im Detail erklärt.' },
+  { id: 3, title: 'Der erste Wasserstart', category: 'Wasserstart', duration: '8:05', watched: false, image: IMG.kite1, description: 'Board anschnallen, Kite in Startposition, Timing für den Zug – Schritt für Schritt zum sauberen Wasserstart.' },
+  { id: 4, title: 'Wasserstart: Häufige Fehler', category: 'Wasserstart', duration: '5:22', watched: false, image: IMG.heroBg, description: 'Die typischen Anfängerfehler beim Wasserstart und wie du sie vermeidest.' },
+  { id: 5, title: 'Bodydrag upwind', category: 'Bodydrag', duration: '4:58', watched: true, image: IMG.heroBg, description: 'Mit dem Kite gegen den Wind schwimmen – die Grundlage, um dein Board zurückzuholen.' },
+  { id: 6, title: 'Bodydrag mit Board', category: 'Bodydrag', duration: '5:30', watched: false, image: IMG.kite2, description: 'Das Board vor dir herziehen, bevor du es anschnallst.' },
+  { id: 7, title: 'Erste Meter fahren', category: 'Erste Fahrversuche', duration: '9:14', watched: false, image: IMG.kite3, description: 'Kantendruck aufbauen und die ersten stehenden Meter auf dem Board.' },
+  { id: 8, title: 'Höhe laufen (Upwind)', category: 'Erste Fahrversuche', duration: '7:02', watched: false, image: IMG.kite1, description: 'So verlierst du beim Fahren keinen Weg mehr gegen den Wind.' },
+  { id: 9, title: 'Erster Jump', category: 'Tricks & Fortgeschritten', duration: '6:47', watched: false, image: IMG.advancedBg, description: 'Anlauf, Kitesteuerung und Landung für deinen ersten kontrollierten Sprung.' },
+  { id: 10, title: 'Toeside fahren', category: 'Tricks & Fortgeschritten', duration: '5:55', watched: false, image: IMG.kite3, description: 'Die Fahrtrichtung wechseln und sicher auf der Zehenkante fahren.' },
+  { id: 11, title: 'Windfenster verstehen', category: 'Wind- & Wetterkunde', duration: '7:30', watched: true, image: IMG.intensiveBg, description: 'Wie das Windfenster aufgebaut ist und warum Position im Fenster über Zug entscheidet.' },
+  { id: 12, title: 'Wettervorhersage lesen', category: 'Wind- & Wetterkunde', duration: '6:18', watched: false, image: IMG.intensiveBg, description: 'Welche Vorhersage-Apps wir nutzen und worauf du für sichere Bedingungen achtest.' },
+];
+
+function slotId(v) { return 'video-' + v.id; }
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+class Component extends DCLogic {
+  state = {
+    role: 'kunde',
+    kScreen: 'login',
+    loginEmail: '',
+    activeVideoId: null,
+    activeCategory: 'Alle',
+    bannerDismissed: false,
+    bookingModal: null,
+    weekOffset: 0,
+    myBookings: [
+      { id: 'b1', day: 'Mi, 30. Jul', month: 'Jul', dayNum: '30', time: '14:00–16:00', spot: 'Hindeloopen', teacher: 'Merlin Muhra', cancelled: false },
+      { id: 'b2', day: 'Sa, 2. Aug', month: 'Aug', dayNum: '02', time: '10:00–12:00', spot: 'Workum', teacher: 'Tom Feddersen', cancelled: false },
+      { id: 'b3', day: 'Mo, 20. Jul', month: 'Jul', dayNum: '20', time: '10:00–12:00', spot: 'Hindeloopen', teacher: 'Merlin Muhra', cancelled: false, completed: true, rating: 5 },
+      { id: 'b4', day: 'Mi, 15. Jul', month: 'Jul', dayNum: '15', time: '14:00–16:00', spot: 'Workum', teacher: 'Anna Berg', cancelled: false, completed: true, rating: 0 },
+    ],
+    bookedSlots: { 'Mi-14': true, 'Sa-10': true },
+    lScreen: 'verfuegbarkeit',
+    availability: { 'Mo-09': true, 'Mo-11': true, 'Di-09': true, 'Mi-14': true, 'Do-11': true, 'Fr-09': true, 'Fr-11': true, 'Sa-10': true, 'Sa-13': true },
+    aScreen: 'uebersicht',
+    windPreset: null,
+    windCancelledDone: false,
+    kalenderTab: 'privat',
+    campOfferings: [
+      { id: 'camp2', name: '2 Tage Anfänger Kitecamp', dateLabel: 'Sa 08.08. – So 09.08.26', capacity: 4, bookedSeats: 2, priceLabel: 'ab €240 / Person', image: IMG.kite1 },
+      { id: 'camp4', name: '4 Tage Intensiv Kitecamp', dateLabel: 'Mo 17.08. – Do 20.08.26', capacity: 4, bookedSeats: 3, priceLabel: 'ab €440', image: IMG.advancedBg },
+      { id: 'camp5', name: '5 Tage Kitecamp Woche', dateLabel: 'Mo 24.08. – Fr 28.08.26', capacity: 4, bookedSeats: 4, priceLabel: 'ab €550', image: IMG.intensiveBg },
+    ],
+    notifPanelOpen: false,
+    notifications: [
+      { id: 'n1', icon: '💨', title: 'Termin abgesagt', message: 'Dein Termin morgen 14:00 Uhr wurde wegen Windvorhersage abgesagt.', time: 'Heute, 08:14', unread: true },
+      { id: 'n2', icon: '✅', title: 'Buchung bestätigt', message: 'Dein Termin am Mi, 30. Jul 14:00 Uhr ist bestätigt.', time: 'Gestern, 19:02', unread: true },
+      { id: 'n3', icon: '🎬', title: 'Neues Video verfügbar', message: '„Erster Jump" ist jetzt in der Video-Bibliothek.', time: 'Vor 3 Tagen', unread: false },
+      { id: 'n4', icon: '⏰', title: 'Erinnerung', message: 'Dein Kitecamp-Wochenende beginnt in 5 Tagen.', time: 'Vor 4 Tagen', unread: false },
+    ],
+  };
+
+  setRole(role) { return () => this.setState({ role }); }
+  roleBtnStyle(role) {
+    const active = this.state.role === role;
+    return `padding:7px 14px;border-radius:8px;border:none;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;background:${active ? 'oklch(78% 0.11 70)' : 'oklch(32% 0.03 235)'};color:${active ? 'oklch(25% 0.05 60)' : '#fff'}`;
+  }
+
+  onEmailChange(e) { this.setState({ loginEmail: e.target.value }); }
+  doLogin() { this.setState({ kScreen: this.state.loginEmail ? 'onboarding' : 'onboarding' }); }
+  finishOnboarding() { this.setState({ kScreen: 'dashboard' }); }
+  goTab(tab) { return () => this.setState({ kScreen: tab, activeVideoId: null }); }
+  logout() { this.setState({ kScreen: 'login', loginEmail: '' }); }
+
+  dismissBanner() { this.setState({ bannerDismissed: true }); }
+  rebookFromBanner() { this.setState({ bannerDismissed: true, kScreen: 'kalender' }); }
+
+  weekDaysData(offset) {
+    const labels = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+    const short = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+    const times = ['09:00', '11:00', '13:00', '14:00', '16:00'];
+    const base = new Date(2026, 6, 27 + offset * 7);
+    return labels.map((label, i) => {
+      const d = new Date(base); d.setDate(base.getDate() + i);
+      const dateLabel = `${label}, ${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`;
+      const key = short[i];
+      const slots = times.map(time => {
+        const slotKey = key + '-' + time.slice(0, 2);
+        const isBooked = !!this.state.bookedSlots[slotKey];
+        const teacher = TEACHERS[(i + parseInt(time)) % TEACHERS.length];
+        const spot = SPOTS[(i + parseInt(time)) % SPOTS.length];
+        let style;
+        if (isBooked) style = 'padding:10px 14px;border-radius:10px;border:none;background:oklch(45% 0.11 210);color:#fff;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer';
+        else style = 'padding:10px 14px;border-radius:10px;border:1.5px solid oklch(70% 0.15 145);background:oklch(95% 0.06 145);color:oklch(30% 0.12 150);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer';
+        return {
+          time, style,
+          onClick: () => {
+            if (isBooked) this.setState({ bookingModal: { mode: 'manage', day: dateLabel, time, teacher, spot, slotKey } });
+            else this.setState({ bookingModal: { mode: 'new', day: dateLabel, time, teacher, spot, slotKey, confirmed: false } });
+          },
+        };
+      });
+      return { label: dateLabel, slots };
+    });
+  }
+
+  prevWeek() { this.setState(s => ({ weekOffset: s.weekOffset - 1 })); }
+  nextWeek() { this.setState(s => ({ weekOffset: s.weekOffset + 1 })); }
+
+  closeModal() { this.setState({ bookingModal: null }); }
+  confirmBooking() {
+    const m = this.state.bookingModal;
+    this.setState(s => ({
+      bookedSlots: { ...s.bookedSlots, [m.slotKey]: true },
+      bookingModal: { ...m, confirmed: true },
+      myBookings: [{ id: 'b' + Date.now(), day: m.day.split(',')[0] + ', ' + m.day.split(' ')[1], month: 'Aug', dayNum: '--', time: m.time, spot: m.spot, teacher: m.teacher, cancelled: false }, ...s.myBookings],
+      notifications: [{ id: 'n' + Date.now(), icon: '✅', title: 'Buchung bestätigt', message: `Dein Termin am ${m.day}, ${m.time} ist bestätigt.`, time: 'Gerade eben', unread: true }, ...s.notifications],
+    }));
+  }
+  cancelBooking() {
+    const m = this.state.bookingModal;
+    this.setState(s => {
+      const bookedSlots = { ...s.bookedSlots }; delete bookedSlots[m.slotKey];
+      return { bookedSlots, bookingModal: null };
+    });
+  }
+
+  openCampModal(camp) {
+    return () => this.setState({ bookingModal: { kind: 'camp', campId: camp.id, name: camp.name, dateLabel: camp.dateLabel, priceLabel: camp.priceLabel, confirmed: false } });
+  }
+  confirmCampBooking() {
+    const m = this.state.bookingModal;
+    this.setState(s => ({
+      campOfferings: s.campOfferings.map(c => c.id === m.campId ? { ...c, bookedSeats: c.bookedSeats + 1 } : c),
+      bookingModal: { ...m, confirmed: true },
+      myBookings: [{ id: 'b' + Date.now(), day: m.dateLabel, month: '', dayNum: '', time: 'Kitecamp', spot: m.name, teacher: '—', cancelled: false }, ...s.myBookings],
+      notifications: [{ id: 'n' + Date.now(), icon: '🏄', title: 'Kitecamp gebucht', message: `Dein Platz für "${m.name}" ist bestätigt.`, time: 'Gerade eben', unread: true }, ...s.notifications],
+    }));
+  }
+
+  rateBooking(id, stars) {
+    return () => this.setState(s => ({
+      myBookings: s.myBookings.map(b => b.id === id ? { ...b, rating: stars } : b),
+    }));
+  }
+
+  openNotifPanel() { this.setState({ notifPanelOpen: true }); }
+  closeNotifPanel() { this.setState({ notifPanelOpen: false }); }
+  markAllNotifsRead() { this.setState(s => ({ notifications: s.notifications.map(n => ({ ...n, unread: false })) })); }
+
+  openVideo(id) { return () => this.setState({ activeVideoId: id, kScreen: 'videoDetail' }); }
+  closeVideo() { this.setState({ kScreen: 'videos', activeVideoId: null }); }
+  setCategory(cat) { return () => this.setState({ activeCategory: cat }); }
+
+  setLScreen(s) { return () => this.setState({ lScreen: s }); }
+  lTabStyle(s) {
+    const active = this.state.lScreen === s;
+    return `padding:9px 14px;border-radius:9px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;background:${active ? 'oklch(45% 0.11 210)' : 'oklch(95% 0.01 220)'};color:${active ? '#fff' : 'oklch(35% 0.02 240)'}`;
+  }
+  setAScreen(s) { return () => this.setState({ aScreen: s }); }
+  aTabStyle(s) {
+    const active = this.state.aScreen === s;
+    return `padding:9px 14px;border-radius:9px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:${active ? 'oklch(45% 0.11 210)' : 'oklch(95% 0.01 220)'};color:${active ? '#fff' : 'oklch(35% 0.02 240)'}`;
+  }
+
+  toggleAvailability(key) {
+    return () => this.setState(s => ({ availability: { ...s.availability, [key]: !s.availability[key] } }));
+  }
+
+  setWindPreset(preset) { return () => this.setState({ windPreset: preset, windCancelledDone: false }); }
+  confirmWindCancel() { this.setState({ windCancelledDone: true }); }
+
+  renderVals() {
+    const s = this.state;
+    const pkg = { name: '10er Karte Kitesurfen Fortgeschritten', total: 10, used: 6, remaining: 4, expiry: '30.09.2026' };
+    const nextAppointment = { date: 'Morgen, 30. Juli', time: '14:00 – 16:00 Uhr', teacher: 'Merlin Muhra', spot: 'Hindeloopen' };
+
+    const myBookings = s.myBookings.filter(b => !b.completed).map(b => ({
+      ...b, month: b.month, day: b.dayNum,
+      cardStyle: `display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid oklch(94% 0.01 220)`,
+    }));
+
+    const historyBookings = s.myBookings.map(b => {
+      const stars = [0, 1, 2, 3, 4].map(i => ({
+        icon: (b.rating || 0) > i ? '★' : '☆',
+        onClick: this.rateBooking(b.id, i + 1),
+      }));
+      const badgeLabel = b.cancelled ? 'Abgesagt' : (b.completed ? 'Abgeschlossen' : 'Bevorstehend');
+      const badgeStyle = `font-size:10.5px;font-weight:700;padding:4px 8px;border-radius:7px;flex-shrink:0;margin-left:10px;background:${b.cancelled ? 'oklch(94% 0.05 25)' : (b.completed ? 'oklch(94% 0.03 200)' : 'oklch(94% 0.05 145)')};color:${b.cancelled ? 'oklch(50% 0.15 25)' : (b.completed ? 'oklch(40% 0.1 210)' : 'oklch(35% 0.12 150)')}`;
+      return { ...b, badgeLabel, badgeStyle, showStars: !!b.completed && !b.cancelled, stars };
+    });
+
+    const camps = s.campOfferings.map(c => {
+      const free = c.capacity - c.bookedSeats;
+      const full = free <= 0;
+      return {
+        ...c,
+        seatsLabel: full ? 'Ausgebucht' : `${free} von ${c.capacity} Plätzen frei`,
+        seatsColor: full ? 'oklch(50% 0.15 25)' : 'oklch(40% 0.12 150)',
+        btnLabel: full ? 'Ausgebucht' : 'Platz buchen',
+        btnStyle: `width:100%;margin-top:10px;padding:12px;border-radius:10px;border:none;font-size:13px;font-weight:700;font-family:inherit;cursor:${full ? 'default' : 'pointer'};background:${full ? 'oklch(92% 0.01 220)' : 'oklch(45% 0.11 210)'};color:${full ? 'oklch(60% 0.01 220)' : '#fff'}`,
+        onClick: full ? (() => {}) : this.openCampModal(c),
+      };
+    });
+
+    const weekDays = this.weekDaysData(s.weekOffset);
+    const weekLabel = s.weekOffset === 0 ? 'Diese Woche' : (s.weekOffset > 0 ? `+${s.weekOffset} Woche(n)` : `${s.weekOffset} Woche(n)`);
+
+    const categories = ['Alle', ...CATS].map(c => ({
+      label: c, onClick: this.setCategory(c),
+      style: `padding:8px 14px;border-radius:20px;border:1.5px solid ${s.activeCategory === c ? 'oklch(45% 0.11 210)' : 'oklch(90% 0.01 220)'};background:${s.activeCategory === c ? 'oklch(45% 0.11 210)' : '#fff'};color:${s.activeCategory === c ? '#fff' : 'oklch(35% 0.02 240)'};font-size:12px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer`,
+    }));
+
+    const filteredVideos = VIDEOS.filter(v => s.activeCategory === 'Alle' || v.category === s.activeCategory).map(v => ({
+      ...v, slotId: slotId(v), placeholder: 'Video: ' + v.title, onClick: this.openVideo(v.id),
+    }));
+
+    const activeVideoRaw = VIDEOS.find(v => v.id === s.activeVideoId);
+    const activeVideo = activeVideoRaw ? { ...activeVideoRaw, slotId: slotId(activeVideoRaw), placeholder: 'Video: ' + activeVideoRaw.title } : { title: '', category: '', duration: '', description: '', slotId: 'x', placeholder: '' };
+    const relatedVideos = activeVideoRaw ? VIDEOS.filter(v => v.category === activeVideoRaw.category && v.id !== activeVideoRaw.id).slice(0, 3).map(v => ({ ...v, slotId: slotId(v), onClick: this.openVideo(v.id) })) : [];
+
+    const upsellPackages = [
+      { name: 'Kitecamp Holland (2 Tage)', desc: 'IJsselmeer, 2-4 Schüler pro Lehrer', price: 'ab 220€' },
+      { name: 'Kitecamp Holland (4-6 Tage)', desc: 'Für alle, die es ernst meinen', price: 'ab 440€' },
+      { name: 'Privatstunden-Paket (5 Std.)', desc: '1:1 Unterricht, freie Terminwahl', price: '325€' },
+    ];
+
+    const teacherWeek = this.weekDaysData(0).map((d, di) => {
+      const short = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][di];
+      const times = ['09:00', '11:00', '13:00', '14:00', '16:00'];
+      return {
+        label: d.label,
+        slots: times.map(t => {
+          const key = short + '-' + t.slice(0, 2);
+          const open = !!s.availability[key];
+          return {
+            time: t,
+            style: `padding:10px 14px;border-radius:10px;border:1.5px solid ${open ? 'oklch(70% 0.15 145)' : 'oklch(90% 0.01 220)'};background:${open ? 'oklch(95% 0.06 145)' : '#fff'};color:${open ? 'oklch(30% 0.12 150)' : 'oklch(60% 0.01 220)'};font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer`,
+            onClick: this.toggleAvailability(key),
+          };
+        }),
+      };
+    });
+
+    const todayStudents = [
+      { initials: 'LM', name: 'Lisa Meyer', time: '14:00–16:00', spot: 'Hindeloopen', level: 'Fortgeschritten' },
+      { initials: 'JK', name: 'Jonas Klein', time: '09:00–11:00', spot: 'Workum', level: 'Anfänger' },
+      { initials: 'SF', name: 'Sofie Frank', time: '11:00–13:00', spot: 'Mirns', level: 'Kitecamp' },
+    ].map(st => ({ ...st, levelStyle: `font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;background:oklch(94% 0.03 200);color:oklch(40% 0.1 210)` }));
+
+    const allBookingsToday = [
+      { time: '09:00', customer: 'Jonas Klein', teacher: 'Anna Berg', spot: 'Workum' },
+      { time: '11:00', customer: 'Sofie Frank', teacher: 'Merlin Muhra', spot: 'Mirns' },
+      { time: '13:00', customer: 'Ben Ostwald', teacher: 'Tom Feddersen', spot: 'Kornwerderzand' },
+      { time: '14:00', customer: 'Lisa Meyer', teacher: 'Merlin Muhra', spot: 'Hindeloopen' },
+      { time: '16:00', customer: 'Nora Vogt', teacher: 'Anna Berg', spot: 'Hindeloopen' },
+    ];
+
+    const windPresets = [
+      { key: 'today', label: 'Heute' }, { key: 'tomorrow', label: 'Morgen' }, { key: 'weekend', label: 'Dieses Wochenende' },
+    ].map(p => ({ label: p.label, onClick: this.setWindPreset(p.key), style: `flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid ${s.windPreset === p.key ? 'oklch(50% 0.15 25)' : 'oklch(90% 0.01 220)'};background:${s.windPreset === p.key ? 'oklch(94% 0.05 25)' : '#fff'};color:${s.windPreset === p.key ? 'oklch(45% 0.15 25)' : 'oklch(35% 0.02 240)'};font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer` }));
+
+    const windAffected = s.windPreset ? [
+      { time: '14:00', customer: 'Lisa Meyer', teacher: 'Merlin Muhra', spot: 'Hindeloopen' },
+      { time: '16:00', customer: 'Nora Vogt', teacher: 'Anna Berg', spot: 'Hindeloopen' },
+    ] : null;
+
+    const allPackages = [
+      { name: '10er Karte Kitesurfen', price: '450€' },
+      { name: '5er Karte Kitesurfen', price: '250€' },
+      { name: 'Privatstunden-Paket (5 Std.)', price: '325€' },
+      { name: 'Kitecamp Holland (2 Tage)', price: 'ab 220€' },
+    ];
+    const allTeachers = TEACHERS.map(name => ({ name, initials: name.split(' ').map(n => n[0]).join('') }));
+    const allVideosAdmin = VIDEOS.slice(0, 6);
+
+    const tabDefs = [
+      { key: 'dashboard', icon: '🏠', label: 'Dashboard' },
+      { key: 'kalender', icon: '📅', label: 'Kalender' },
+      { key: 'videos', icon: '▶', label: 'Videos' },
+      { key: 'profil', icon: '👤', label: 'Profil' },
+    ];
+    const activeTabIndex = Math.max(0, tabDefs.findIndex(t => s.kScreen === t.key || (t.key === 'videos' && s.kScreen === 'videoDetail')));
+    const tabIndicatorStyle = `position:absolute;top:2px;left:calc(${activeTabIndex} * 25% + 10px);width:calc(25% - 20px);height:3px;border-radius:3px;background:linear-gradient(90deg, oklch(45% 0.11 210), oklch(78% 0.11 70));transition:left .32s cubic-bezier(.22,1,.36,1)`;
+    const tabs = tabDefs.map(t => {
+      const active = s.kScreen === t.key || (t.key === 'videos' && s.kScreen === 'videoDetail');
+      return {
+        ...t, onClick: this.goTab(t.key),
+        iconStyle: `font-size:18px;filter:${active ? 'none' : 'grayscale(1) opacity(0.5)'}`,
+        labelStyle: `font-size:10.5px;font-weight:700;color:${active ? 'oklch(45% 0.11 210)' : 'oklch(60% 0.01 220)'}`,
+      };
+    });
+
+    return {
+      isKunde: s.role === 'kunde', isLehrer: s.role === 'lehrer', isAdmin: s.role === 'admin',
+      setRole: (r) => this.setRole(r), roleBtnStyle: (r) => this.roleBtnStyle(r),
+      roleBtnStyleKunde: this.roleBtnStyle('kunde'),
+      roleBtnStyleLehrer: this.roleBtnStyle('lehrer'),
+      roleBtnStyleAdmin: this.roleBtnStyle('admin'),
+      selectRoleKunde: () => this.setState({ role: 'kunde' }),
+      selectRoleLehrer: () => this.setState({ role: 'lehrer' }),
+      selectRoleAdmin: () => this.setState({ role: 'admin' }),
+      goToKalender: () => this.setState({ kScreen: 'kalender', activeVideoId: null }),
+      goToVideos: () => this.setState({ kScreen: 'videos', activeVideoId: null }),
+      showLScreenVerfuegbarkeit: () => this.setState({ lScreen: 'verfuegbarkeit' }),
+      showLScreenSchueler: () => this.setState({ lScreen: 'schueler' }),
+      showAScreenUebersicht: () => this.setState({ aScreen: 'uebersicht' }),
+      showAScreenWind: () => this.setState({ aScreen: 'wind' }),
+      showAScreenVerwaltung: () => this.setState({ aScreen: 'verwaltung' }),
+      kScreenIs: { login: s.kScreen === 'login', onboarding: s.kScreen === 'onboarding', dashboard: s.kScreen === 'dashboard', kalender: s.kScreen === 'kalender', videos: s.kScreen === 'videos', videoDetail: s.kScreen === 'videoDetail', profil: s.kScreen === 'profil' },
+      loginEmail: s.loginEmail, onEmailChange: (e) => this.onEmailChange(e), doLogin: () => this.doLogin(), finishOnboarding: () => this.finishOnboarding(),
+      nextAppointment, pkg,
+      pkgBarStyle: `height:100%;border-radius:6px;width:${(pkg.remaining / pkg.total) * 100}%;background:linear-gradient(90deg, oklch(45% 0.11 210), oklch(78% 0.11 70))`,
+      showWindBanner: !s.bannerDismissed, dismissBanner: () => this.dismissBanner(), rebookFromBanner: () => this.rebookFromBanner(),
+      goTab: (t) => this.goTab(t), myBookings, historyBookings,
+      prevWeek: () => this.prevWeek(), nextWeek: () => this.nextWeek(), weekLabel, weekDays,
+      kalenderTabIs: { privat: s.kalenderTab === 'privat', camps: s.kalenderTab === 'camps' },
+      showKalenderPrivat: () => this.setState({ kalenderTab: 'privat' }),
+      showKalenderCamps: () => this.setState({ kalenderTab: 'camps' }),
+      kalenderTabStylePrivat: `padding:9px 14px;border-radius:9px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;background:${s.kalenderTab === 'privat' ? 'oklch(45% 0.11 210)' : 'oklch(95% 0.01 220)'};color:${s.kalenderTab === 'privat' ? '#fff' : 'oklch(35% 0.02 240)'}`,
+      kalenderTabStyleCamps: `padding:9px 14px;border-radius:9px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;background:${s.kalenderTab === 'camps' ? 'oklch(45% 0.11 210)' : 'oklch(95% 0.01 220)'};color:${s.kalenderTab === 'camps' ? '#fff' : 'oklch(35% 0.02 240)'}`,
+      camps, confirmCampBooking: () => this.confirmCampBooking(),
+      categories, filteredVideos, activeVideo, relatedVideos, openVideo: (id) => this.openVideo(id), closeVideo: () => this.closeVideo(),
+      upsellPackages, logout: () => this.logout(),
+      showTabBar: !['login', 'onboarding'].includes(s.kScreen), tabs, tabIndicatorStyle,
+      bookingModal: s.bookingModal, closeModal: () => this.closeModal(), confirmBooking: () => this.confirmBooking(), cancelBooking: () => this.cancelBooking(),
+      notifPanelOpen: s.notifPanelOpen,
+      openNotifPanel: () => this.openNotifPanel(),
+      closeNotifPanel: () => this.closeNotifPanel(),
+      markAllNotifsRead: () => this.markAllNotifsRead(),
+      hasUnreadNotifs: s.notifications.some(n => n.unread),
+      notifications: s.notifications.map(n => ({
+        ...n,
+        rowStyle: `display:flex;gap:10px;padding:12px 4px;border-radius:10px;background:${n.unread ? 'oklch(97% 0.02 210)' : 'transparent'}`,
+      })),
+      setLScreen: (x) => this.setLScreen(x), lTabStyle: (x) => this.lTabStyle(x), lScreenIs: { verfuegbarkeit: s.lScreen === 'verfuegbarkeit', schueler: s.lScreen === 'schueler' },
+      lTabStyleVerfuegbarkeit: this.lTabStyle('verfuegbarkeit'),
+      lTabStyleSchueler: this.lTabStyle('schueler'),
+      teacherWeek, todayLabel: 'Mi, 30. Juli 2026', todayStudents,
+      setAScreen: (x) => this.setAScreen(x), aTabStyle: (x) => this.aTabStyle(x), aScreenIs: { uebersicht: s.aScreen === 'uebersicht', wind: s.aScreen === 'wind', verwaltung: s.aScreen === 'verwaltung' },
+      aTabStyleUebersicht: this.aTabStyle('uebersicht'),
+      aTabStyleWind: this.aTabStyle('wind'),
+      aTabStyleVerwaltung: this.aTabStyle('verwaltung'),
+      stats: { today: 5, week: 24 }, allBookingsToday,
+      windPresets, windAffected, windCancelledDone: s.windCancelledDone, confirmWindCancel: () => this.confirmWindCancel(),
+      allPackages, allTeachers, allVideosAdmin,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
