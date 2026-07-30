@@ -188,12 +188,21 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-lf-navy p-6">
-      <ProgressBar step={step} />
-      <p className="mt-6 text-white">Schritt 3 folgt in Task 3</p>
+    <div className="flex flex-1 flex-col justify-between bg-lf-navy p-8">
+      <div className="pt-2">
+        <ProgressBar step={step} />
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <span className="mb-4 text-5xl">🪁</span>
+        <h1 className="mb-2.5 text-2xl font-extrabold text-white">Bereit für den ersten Wind?</h1>
+        <p className="max-w-xs text-sm leading-relaxed text-white/70">
+          Dein Dashboard zeigt dir freie Termine, deinen Stundenkontostand und alle Lernvideos zu
+          deinem Level.
+        </p>
+      </div>
       <button
         onClick={() => router.push("/dashboard")}
-        className="mt-auto w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-navy"
+        className="w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-navy"
       >
         Los geht&apos;s
       </button>
