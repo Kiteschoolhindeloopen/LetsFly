@@ -17,9 +17,9 @@ Richtungen.
 
 - **Ziel:** Wischen auf den 5 Haupt-Tab-Seiten wechselt zur vorherigen/
   nächsten Seite in obiger Reihenfolge.
-- **Nicht-Ziel:** Kein animiertes Mitziehen der Seite mit dem Finger (siehe
-  Approach-Entscheidung unten) — nur Geste erkennen, dann normale
-  Next.js-Navigation (`router.push`).
+- **Nicht-Ziel:** Kein animiertes Mitziehen der Seite mit dem Finger — nur
+  Geste erkennen, dann normale Next.js-Navigation (`router.push`). Bewusste
+  Entscheidung für den einfacheren Ansatz statt eines animierten Übergangs.
 - **Nicht-Ziel:** Kein Wischen auf Unterseiten wie `/videos/[id]`, auch wenn
   dort aktuell (unverändert, bestehendes Verhalten) noch die Tab-Bar
   eingeblendet wird.
