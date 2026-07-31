@@ -37,8 +37,11 @@ keine Gesture-Library — für Schwellenwert-basiertes Wischen unnötig):
 2. Neuer exakter Vergleich `TAB_BAR_PREFIXES.includes(pathname)` bestimmt, ob
    Wischen auf der aktuellen Seite aktiv ist (schließt `/videos/[id]` aus, da
    `pathname` dort z.B. `/videos/68` ist, kein exakter Treffer).
-3. `onTouchStart` merkt sich Start-`(x, y)` in einem `useRef`.
-4. `onTouchEnd` berechnet `deltaX`/`deltaY` zum Startpunkt:
+3. `onPointerDown` merkt sich Start-`(x, y)` in einem `useRef`. Pointer Events
+   statt Touch Events, damit dieselbe Geste per Finger (Handy) **und** per
+   Maus-Drag (Laptop-Trackpad/Maus, da der Kunde ohne Handy lokal testet)
+   funktioniert.
+4. `onPointerUp` berechnet `deltaX`/`deltaY` zum Startpunkt:
    - Geste zählt nur, wenn `|deltaX| >= 60px` **und** `|deltaX| > |deltaY|`
      (unterscheidet von vertikalem Scrollen).
    - `deltaX < 0` (nach links gewischt) → nächster Tab-Index.
@@ -48,6 +51,29 @@ keine Gesture-Library — für Schwellenwert-basiertes Wischen unnötig):
      `next/navigation`-Router.
 5. Handler werden nur auf dem Content-Wrapper-Div gesetzt, wenn `showTabBar`
    **und** der exakte Pfad-Check zutrifft.
+6. Während eines aktiven Drags wird Text-Selektion per `userSelect: "none"`
+   (inline Style, nur wenn Swipe aktiv) unterdrückt, damit Maus-Drag nicht
+   versehentlich Seiteninhalt markiert.
+7. `onPointerDown` ruft zusätzlich `e.preventDefault()` auf. Grund: Ein
+   Maus-Drag, der über einem `<img>` startet (z.B. Video-Thumbnails auf
+   `/videos`), löst sonst den nativen Browser-Bilder-Drag aus (`dragstart`),
+   wodurch `pointerup` nie feuert und die Geste stillschweigend fehlschlägt
+   (per Playwright-Test verifiziert). Mit `preventDefault()` auf
+   `pointerdown` bleiben Klicks auf Links/Buttons sowie Fokus/Texteingabe in
+   Formularfeldern (getestet auf `/requests`) unverändert funktionsfähig.
+8. Ghost-Click-Schutz: Beginnt/endet eine erkannte Wisch-Geste auf einem Link
+   oder Button (z.B. eine volle Video-Karte auf `/videos`), feuert der
+   Browser nach `pointerup` zusätzlich ein normales `click`-Event auf diesem
+   Element — ohne Schutz würde ein Wischen auf einer Video-Karte zusätzlich
+   in das Video hineinnavigieren (per Playwright-Test reproduziert: Wischen
+   nach rechts landete auf `/videos/video-2` statt auf `/book`). Fix: ein
+   `justSwiped`-Ref wird bei jeder erkannten Wisch-Geste (auch ohne
+   tatsächliche Tab-Navigation an den Rändern) gesetzt; ein
+   `onClickCapture`-Handler auf demselben Container unterdrückt das nächste
+   `click`-Event einmalig (`preventDefault` + `stopPropagation`), wenn das
+   Flag gesetzt ist. Normale Taps/Klicks (ohne vorherige Wisch-Geste) sind
+   davon unberührt (verifiziert: Tap auf Video-Karte navigiert weiterhin
+   normal, Texteingabe in Formularfeldern auf `/requests` unverändert).
 
 ## Betroffene Bereiche / Risiken
 
@@ -56,14 +82,17 @@ keine Gesture-Library — für Schwellenwert-basiertes Wischen unnötig):
   kein Konflikt zwischen Wisch-Navigation und internem horizontalem Scrollen.
 - Vertikales Scrollen auf den Seiten bleibt unangetastet, da die Geste nur
   bei überwiegend horizontaler Bewegung auslöst.
-- Rein Touch-Events (`onTouchStart`/`onTouchEnd`) — Desktop-Maus-Drag wird
-  bewusst nicht unterstützt (Feature ist explizit für Handy gedacht).
+- Pointer Events (`onPointerDown`/`onPointerUp`) statt reiner Touch-Events:
+  deckt Maus-Drag (Laptop-Test ohne Handy, siehe `AGENTS.md`) und
+  Touch (echtes Handy) mit derselben Logik ab.
 
 ## Testplan
 
-- Manuell im Dev-Server auf jeder der 5 Tab-Seiten: Wischen links → nächster
-  Tab, wischen rechts → vorheriger Tab.
-- Rand-Fälle: Wischen links auf „Profil" (letzter Tab) und rechts auf
-  „Dashboard" (erster Tab) → keine Navigation.
+- Manuell im Dev-Server (Browser, Maus-Drag) auf jeder der 5 Tab-Seiten:
+  Ziehen nach links → nächster Tab, Ziehen nach rechts → vorheriger Tab.
+- Rand-Fälle: Ziehen nach links auf „Profil" (letzter Tab) und nach rechts
+  auf „Dashboard" (erster Tab) → keine Navigation.
 - Vertikales Scrollen auf einer der Seiten bleibt unbeeinflusst.
-- `/videos/[id]` (Video-Detail): Wischen löst keine Tab-Navigation aus.
+- Normale Klicks (z.B. auf Buttons/Links) lösen keine ungewollte Navigation
+  aus (Delta bleibt unter der Schwelle).
+- `/videos/[id]` (Video-Detail): Ziehen löst keine Tab-Navigation aus.
