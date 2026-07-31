@@ -172,7 +172,7 @@ export default function RequestsPage() {
               )}
               {r.status === "DATE_PROPOSED" && r.proposedDate && (
                 <div className="mt-3 rounded-xl bg-lf-ocean-light p-3">
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-semibold text-lf-ocean">
                     Neuer Vorschlag: {new Date(r.proposedDate).toLocaleDateString("de-DE")}
                   </p>
                   <div className="mt-2 flex gap-2">

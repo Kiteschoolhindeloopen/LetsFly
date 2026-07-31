@@ -276,7 +276,9 @@ export default function DashboardPage() {
                 >
                   <span className="text-lg">{n.icon}</span>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                    <p className={`text-sm font-semibold ${n.unread ? "text-lf-ocean" : "text-foreground"}`}>
+                      {n.title}
+                    </p>
                     <p className="mt-0.5 text-sm text-lf-muted">{n.message}</p>
                     <p className="mt-1 text-xs text-lf-muted">{n.time}</p>
                   </div>

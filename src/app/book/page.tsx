@@ -227,11 +227,11 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                 <div className="mt-4 flex flex-col gap-2 rounded-xl bg-lf-ocean-light p-3.5">
                   <div className="flex justify-between text-[13px]">
                     <span className="text-lf-muted">Angebot</span>
-                    <span className="font-bold text-foreground">{course.name}</span>
+                    <span className="font-bold text-lf-ocean">{course.name}</span>
                   </div>
                   <div className="flex justify-between text-[13px]">
                     <span className="text-lf-muted">Kosten</span>
-                    <span className="font-bold text-foreground">
+                    <span className="font-bold text-lf-ocean">
                       {pkg ? "1 Stunde vom Paket" : formatEuro(course.pricePerHourCents ?? course.priceCents)}
                     </span>
                   </div>
@@ -318,7 +318,7 @@ function BookPageContent() {
           className={
             category === "PRIVATE_HOURS"
               ? "rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white"
-              : "rounded-full bg-lf-ocean-light px-4 py-2 text-sm font-medium text-foreground"
+              : "rounded-full bg-lf-ocean-light px-4 py-2 text-sm font-medium text-lf-ocean"
           }
         >
           Privatstunden
@@ -328,7 +328,7 @@ function BookPageContent() {
           className={
             category === "GROUP_CAMP"
               ? "rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white"
-              : "rounded-full bg-lf-ocean-light px-4 py-2 text-sm font-medium text-foreground"
+              : "rounded-full bg-lf-ocean-light px-4 py-2 text-sm font-medium text-lf-ocean"
           }
         >
           Kitecamps
@@ -394,11 +394,11 @@ function BookPageContent() {
             <div className="mt-4 flex flex-col gap-2 rounded-xl bg-lf-ocean-light p-3.5">
               <div className="flex justify-between text-[13px]">
                 <span className="text-lf-muted">Angebot</span>
-                <span className="font-bold text-foreground">{campConfirming.course.name}</span>
+                <span className="font-bold text-lf-ocean">{campConfirming.course.name}</span>
               </div>
               <div className="flex justify-between text-[13px]">
                 <span className="text-lf-muted">Kosten</span>
-                <span className="font-bold text-foreground">
+                <span className="font-bold text-lf-ocean">
                   {formatEuro(campConfirming.slot.priceCentsOverride ?? campConfirming.course.priceCents)}
                 </span>
               </div>

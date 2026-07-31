@@ -114,7 +114,7 @@ export default function InstructorPage() {
             className={
               tab === value
                 ? "rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white"
-                : "rounded-full bg-lf-ocean-light px-4 py-2 text-sm font-medium text-foreground"
+                : "rounded-full bg-lf-ocean-light px-4 py-2 text-sm font-medium text-lf-ocean"
             }
           >
             {label}

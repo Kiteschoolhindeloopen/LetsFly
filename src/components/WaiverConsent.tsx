@@ -16,7 +16,7 @@ export function WaiverConsent({ accepted, onChange }: WaiverConsentProps) {
 
   return (
     <div className="mt-4 rounded-xl border border-lf-border bg-lf-ocean-light p-3.5">
-      <label className="flex items-start gap-2.5 text-xs font-medium text-foreground">
+      <label className="flex items-start gap-2.5 text-xs font-medium text-lf-ocean">
         <input
           type="checkbox"
           checked={accepted}

@@ -92,7 +92,7 @@ export default function ProfilePage() {
 
       {pkg && (
         <div className="mx-5 my-2 rounded-2xl bg-lf-ocean-light p-4">
-          <p className="text-sm font-bold text-foreground">{pkg.totalHours}h Stundenpaket</p>
+          <p className="text-sm font-bold text-lf-ocean">{pkg.totalHours}h Stundenpaket</p>
           <p className="mt-1 text-xs text-lf-muted">
             {pkg.totalHours - pkg.hoursScheduled - pkg.hoursCompleted} von {pkg.totalHours} Stunden übrig
             {pkg.expiresAt ? ` · läuft ab ${new Date(pkg.expiresAt).toLocaleDateString("de-DE")}` : ""}
