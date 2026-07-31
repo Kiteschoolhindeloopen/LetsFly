@@ -54,13 +54,17 @@ keine Gesture-Library — für Schwellenwert-basiertes Wischen unnötig):
 6. Während eines aktiven Drags wird Text-Selektion per `userSelect: "none"`
    (inline Style, nur wenn Swipe aktiv) unterdrückt, damit Maus-Drag nicht
    versehentlich Seiteninhalt markiert.
-7. `onPointerDown` ruft zusätzlich `e.preventDefault()` auf. Grund: Ein
-   Maus-Drag, der über einem `<img>` startet (z.B. Video-Thumbnails auf
-   `/videos`), löst sonst den nativen Browser-Bilder-Drag aus (`dragstart`),
-   wodurch `pointerup` nie feuert und die Geste stillschweigend fehlschlägt
-   (per Playwright-Test verifiziert). Mit `preventDefault()` auf
-   `pointerdown` bleiben Klicks auf Links/Buttons sowie Fokus/Texteingabe in
-   Formularfeldern (getestet auf `/requests`) unverändert funktionsfähig.
+7. `onDragStart` ruft `e.preventDefault()` auf. Grund: Ein Maus-Drag, der
+   über einem `<img>` startet (z.B. Video-Thumbnails auf `/videos`), löst
+   sonst den nativen Browser-Bilder-Drag aus (`dragstart`), wodurch
+   `pointerup` nie feuert und die Geste stillschweigend fehlschlägt (per
+   Playwright-Test verifiziert). **Korrektur nach erstem Release** (siehe
+   „Gefundener Regressionsbug" unten): ursprünglich stand dieses
+   `preventDefault()` auf `onPointerDown` selbst, was zu breit war und
+   nebenbei den Fokus auf `<select>`/`<input>`/`<textarea>` unterdrückt hat.
+   Jetzt greift `preventDefault()` gezielt nur auf dem `dragstart`-Event,
+   das ausschließlich für tatsächlich native ziehbare Elemente (Bilder,
+   Links) feuert — normale Formularfelder sind davon nie betroffen.
 8. Ghost-Click-Schutz: Beginnt/endet eine erkannte Wisch-Geste auf einem Link
    oder Button (z.B. eine volle Video-Karte auf `/videos`), feuert der
    Browser nach `pointerup` zusätzlich ein normales `click`-Event auf diesem
@@ -86,6 +90,41 @@ keine Gesture-Library — für Schwellenwert-basiertes Wischen unnötig):
   deckt Maus-Drag (Laptop-Test ohne Handy, siehe `AGENTS.md`) und
   Touch (echtes Handy) mit derselben Logik ab.
 
+## Gefundener Regressionsbug (nach erstem Release)
+
+Nutzer-Meldung: „Warum kann ich keine Anfragen bzw. Pakete auswählen?" — das
+`<select>` „Paket / Angebot" auf `/requests` ließ sich nicht mehr öffnen.
+
+**Root Cause:** Das ursprüngliche `e.preventDefault()` in `onPointerDown`
+(Punkt 7, alte Fassung) sollte nur das native Bilder-Drag verhindern, hat
+aber pauschal die Standard-Aktion **jedes** `pointerdown`-Events auf den 5
+Tab-Seiten unterdrückt. Für `<select>`, `<input>` und `<textarea>` ist
+„Fokussieren (und bei `<select>` das Dropdown öffnen)" ebenfalls eine
+Standard-Aktion von `pointerdown` — die wurde also mitunterdrückt. Betraf
+alle Formularfelder auf allen 5 Haupt-Tabs, nicht nur `/requests`.
+
+Verifiziert per Playwright: echter Maus-Klick (nicht die High-Level-API, die
+Elemente automatisch fokussiert) auf `<select>`, `<textarea>` und
+`<input type="date">` auf `/requests` ließ `document.activeElement` auf
+`BODY` stehen, statt auf das jeweilige Feld zu wechseln.
+
+**Fix:** `preventDefault()` von `onPointerDown` entfernt und stattdessen an
+einem eigenen `onDragStart`-Handler platziert (Punkt 7, neue Fassung oben).
+`dragstart` feuert nur für nativ ziehbare Elemente (Bilder, Links), nie für
+Formularfelder — damit bleibt der ursprüngliche Zweck (Bilder-Drag
+verhindern) erhalten, ohne Fokus/Formulareingabe zu beeinträchtigen.
+Erneut per Playwright verifiziert: Fokus auf `<select>`/`<textarea>`/
+`<input type="date">` funktioniert wieder, Wischen über Bildern funktioniert
+weiterhin, volle Tab-Wisch-Sequenz (alle 5 Tabs, beide Richtungen, Ränder)
+sowie der Ghost-Click-Schutz laufen unverändert korrekt.
+
+**Lehre:** Die ursprüngliche Verifikation dieses Punkts (vorheriger Absatz)
+hatte den Fehler bereits verdeckt, weil sie auf Playwrights `.click()`
+zum Testen von Formularfeldern setzte — diese High-Level-API fokussiert
+Elemente teils unabhängig vom tatsächlichen Standard-Aktions-Verhalten.
+Erst ein manuell zusammengesetzter `mouse.move`/`down`/`up`-Klick deckte den
+Unterschied auf.
+
 ## Testplan
 
 - Manuell im Dev-Server (Browser, Maus-Drag) auf jeder der 5 Tab-Seiten:
@@ -96,3 +135,6 @@ keine Gesture-Library — für Schwellenwert-basiertes Wischen unnötig):
 - Normale Klicks (z.B. auf Buttons/Links) lösen keine ungewollte Navigation
   aus (Delta bleibt unter der Schwelle).
 - `/videos/[id]` (Video-Detail): Ziehen löst keine Tab-Navigation aus.
+- Formularfelder bleiben nutzbar: `<select>` (`/requests`), `<textarea>`
+  (`/requests`), `<input type="date">` (`/requests`) lassen sich per echtem
+  Klick fokussieren und bedienen.

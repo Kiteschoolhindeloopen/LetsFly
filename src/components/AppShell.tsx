@@ -18,6 +18,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   function handlePointerDown(e: React.PointerEvent) {
     dragStart.current = { x: e.clientX, y: e.clientY };
+  }
+
+  function handleDragStart(e: React.DragEvent) {
     e.preventDefault();
   }
 
@@ -59,6 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onPointerDown={swipeEnabled ? handlePointerDown : undefined}
           onPointerUp={swipeEnabled ? handlePointerUp : undefined}
           onClickCapture={swipeEnabled ? handleClickCapture : undefined}
+          onDragStart={swipeEnabled ? handleDragStart : undefined}
         >
           {children}
         </div>
