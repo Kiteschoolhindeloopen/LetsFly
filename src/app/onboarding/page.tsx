@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { animate } from "animejs";
+import { SplitReveal } from "@/components/SplitReveal";
 
-type Step = "welcome" | "choices" | "done";
+type Step = "welcome" | "choices" | "benefits" | "done";
 
 interface TileOption {
   id: string;
@@ -61,9 +63,29 @@ const TILE_GROUPS: TileGroup[] = [
   },
 ];
 
+const BENEFITS = [
+  {
+    title: "Kurstermine verwalten",
+    text: "Deine Buchungen immer im Blick",
+  },
+  {
+    title: "Stundenkontostand",
+    text: "Sieh sofort, was noch übrig ist",
+  },
+  {
+    title: "Lernvideos",
+    text: "Zu jedem Level, jederzeit abrufbar",
+  },
+  {
+    title: "Automatische Windabsage",
+    text: "Bei Flaute sagen wir ab, du buchst einfach neu",
+  },
+];
+
 const STEP_FRACTION: Record<Step, number> = {
-  welcome: 1 / 3,
-  choices: 2 / 3,
+  welcome: 1 / 4,
+  choices: 2 / 4,
+  benefits: 3 / 4,
   done: 1,
 };
 
@@ -71,11 +93,41 @@ function ProgressBar({ step }: { step: Step }) {
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
       <div
-        className="h-full rounded-full bg-white transition-all duration-300"
+        className="h-full rounded-full bg-gradient-to-r from-lf-ocean to-lf-sand transition-all duration-300"
         style={{ width: `${STEP_FRACTION[step] * 100}%` }}
       />
     </div>
   );
+}
+
+function PhotoBand({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="relative h-[200px] w-full shrink-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className="h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-lf-ocean-dark/90 via-lf-ocean/75 to-lf-ocean/55" />
+    </div>
+  );
+}
+
+function FadeInRow({ children, index }: { children: React.ReactNode; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    animate(el, {
+      opacity: [0, 1],
+      translateY: [16, 0],
+      duration: 400,
+      delay: index * 90,
+      ease: "outCubic",
+    });
+  }, [index]);
+
+  return <div ref={ref}>{children}</div>;
 }
 
 export default function OnboardingPage() {
@@ -103,9 +155,9 @@ export default function OnboardingPage() {
         />
         <div className="flex flex-1 flex-col justify-between p-8">
           <div>
-            <h1 className="mb-2.5 text-2xl font-extrabold text-foreground">
+            <SplitReveal as="h1" className="mb-2.5 text-2xl font-extrabold text-foreground">
               Willkommen bei LetsFly, Lisa! 🌊
-            </h1>
+            </SplitReveal>
             <p className="text-sm leading-relaxed text-lf-muted">
               Hier verwaltest du deine gebuchten Kurstermine, siehst deinen Stundenkontostand und
               schaust dir Lernvideos zu jedem Level an. Bei schlechtem Wind sagen wir automatisch ab
@@ -134,11 +186,14 @@ export default function OnboardingPage() {
   if (step === "choices") {
     return (
       <div className="flex flex-1 flex-col bg-lf-ocean">
+        <PhotoBand src="https://kiteschoolhindeloopen.com/images/kite3.webp" alt="Kitesurfer in Aktion" />
         <div className="px-6 pt-6">
           <ProgressBar step={step} />
         </div>
         <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6">
-          <h1 className="mb-1.5 text-2xl font-extrabold text-white">Was bringst du schon mit?</h1>
+          <SplitReveal key={step} as="h1" className="mb-1.5 text-2xl font-extrabold text-white">
+            Was bringst du schon mit?
+          </SplitReveal>
           <p className="mb-6 text-sm text-white/70">
             Wähl aus, was zu dir passt — hilft uns, dir die richtigen Kurse und Videos zu zeigen.
           </p>
@@ -177,6 +232,54 @@ export default function OnboardingPage() {
         </div>
         <div className="sticky bottom-0 border-t border-white/10 bg-lf-ocean p-6 pb-8">
           <button
+            onClick={() => setStep("benefits")}
+            className="w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-ocean"
+          >
+            Weiter
+          </button>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="mt-3 w-full py-1 text-center text-xs font-semibold text-white/70"
+          >
+            Überspringen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "benefits") {
+    return (
+      <div className="flex flex-1 flex-col bg-lf-ocean">
+        <PhotoBand src="https://kiteschoolhindeloopen.com/images/bg-5.webp" alt="Kitesurf-Kurs am IJsselmeer" />
+        <div className="px-6 pt-6">
+          <ProgressBar step={step} />
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6">
+          <SplitReveal key={step} as="h1" className="mb-1.5 text-2xl font-extrabold text-white">
+            Das kannst du mit LetsFly
+          </SplitReveal>
+          <p className="mb-6 text-sm text-white/70">
+            Deine App für alles rund um deine Kite-Kurse.
+          </p>
+          <div className="divide-y divide-white/15 border-y border-white/15">
+            {BENEFITS.map((benefit, index) => (
+              <FadeInRow key={benefit.title} index={index}>
+                <div className="flex items-baseline gap-4 py-5">
+                  <span className="text-2xl font-extrabold leading-none text-lf-sand">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-white">{benefit.title}</p>
+                    <p className="mt-0.5 text-sm text-white/70">{benefit.text}</p>
+                  </div>
+                </div>
+              </FadeInRow>
+            ))}
+          </div>
+        </div>
+        <div className="sticky bottom-0 border-t border-white/10 bg-lf-ocean p-6 pb-8">
+          <button
             onClick={() => setStep("done")}
             className="w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-ocean"
           >
@@ -194,13 +297,23 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col justify-between bg-lf-navy p-8">
-      <div className="pt-2">
+    <div className="relative flex flex-1 flex-col justify-between overflow-hidden p-8">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="https://kiteschoolhindeloopen.com/images/bg-4.webp"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-lf-navy/95 via-lf-navy/90 to-lf-navy/80" />
+      <div className="relative pt-2">
         <ProgressBar step={step} />
       </div>
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
+      <div className="relative flex flex-1 flex-col items-center justify-center text-center">
         <span className="mb-4 text-5xl">🪁</span>
-        <h1 className="mb-2.5 text-2xl font-extrabold text-white">Bereit für den ersten Wind?</h1>
+        <SplitReveal as="h1" className="mb-2.5 text-2xl font-extrabold text-white">
+          Bereit für den ersten Wind?
+        </SplitReveal>
         <p className="max-w-xs text-sm leading-relaxed text-white/70">
           Dein Dashboard zeigt dir freie Termine, deinen Stundenkontostand und alle Lernvideos zu
           deinem Level.
@@ -208,7 +321,7 @@ export default function OnboardingPage() {
       </div>
       <button
         onClick={() => router.push("/dashboard")}
-        className="w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-navy"
+        className="relative w-full rounded-xl bg-white py-4 text-sm font-bold text-lf-navy"
       >
         Los geht&apos;s
       </button>
