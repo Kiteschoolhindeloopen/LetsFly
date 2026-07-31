@@ -306,16 +306,16 @@ export const seedPackageRequests: PackageRequest[] = [];
 export const seedVideos: Video[] = [
   { id: "video-1", title: "Kite-Check vor dem Start", category: "Sicherheit & Material", duration: "6:12", image: IMG.beginnerBg, description: "So prüfst du Leinen, Aufhängung und Sicherheitssystem vor jeder Session – die wichtigste Routine, bevor du überhaupt ins Wasser gehst." },
   { id: "video-2", title: "Trapez richtig anlegen", category: "Sicherheit & Material", duration: "3:40", image: IMG.kite2, description: "Sitzhöhe, Hakenposition und Quick-Release im Detail erklärt." },
-  { id: "video-3", title: "Der erste Wasserstart", category: "Wasserstart", duration: "8:05", image: IMG.kite1, description: "Board anschnallen, Kite in Startposition, Timing für den Zug – Schritt für Schritt zum sauberen Wasserstart." },
-  { id: "video-4", title: "Wasserstart: Häufige Fehler", category: "Wasserstart", duration: "5:22", image: IMG.heroBg, description: "Die typischen Anfängerfehler beim Wasserstart und wie du sie vermeidest." },
-  { id: "video-5", title: "Bodydrag upwind", category: "Bodydrag", duration: "4:58", image: IMG.heroBg, description: "Mit dem Kite gegen den Wind schwimmen – die Grundlage, um dein Board zurückzuholen." },
-  { id: "video-6", title: "Bodydrag mit Board", category: "Bodydrag", duration: "5:30", image: IMG.kite2, description: "Das Board vor dir herziehen, bevor du es anschnallst." },
-  { id: "video-7", title: "Erste Meter fahren", category: "Erste Fahrversuche", duration: "9:14", image: IMG.kite3, description: "Kantendruck aufbauen und die ersten stehenden Meter auf dem Board." },
-  { id: "video-8", title: "Höhe laufen (Upwind)", category: "Erste Fahrversuche", duration: "7:02", image: IMG.kite1, description: "So verlierst du beim Fahren keinen Weg mehr gegen den Wind." },
-  { id: "video-9", title: "Erster Jump", category: "Tricks & Fortgeschritten", duration: "6:47", image: IMG.advancedBg, description: "Anlauf, Kitesteuerung und Landung für deinen ersten kontrollierten Sprung." },
-  { id: "video-10", title: "Toeside fahren", category: "Tricks & Fortgeschritten", duration: "5:55", image: IMG.kite3, description: "Die Fahrtrichtung wechseln und sicher auf der Zehenkante fahren." },
-  { id: "video-11", title: "Windfenster verstehen", category: "Wind- & Wetterkunde", duration: "7:30", image: IMG.intensiveBg, description: "Wie das Windfenster aufgebaut ist und warum Position im Fenster über Zug entscheidet." },
-  { id: "video-12", title: "Wettervorhersage lesen", category: "Wind- & Wetterkunde", duration: "6:18", image: IMG.intensiveBg, description: "Welche Vorhersage-Apps wir nutzen und worauf du für sichere Bedingungen achtest." },
+  { id: "video-3", title: "Der erste Wasserstart", category: "Wasserstart", duration: "3:20", image: IMG.kite1, description: "Board anschnallen, Kite in Startposition, Timing für den Zug – Schritt für Schritt zum sauberen Wasserstart." },
+  { id: "video-4", title: "Wasserstart: Häufige Fehler", category: "Wasserstart", duration: "4:25", image: IMG.heroBg, description: "Die typischen Anfängerfehler beim Wasserstart und wie du sie vermeidest." },
+  { id: "video-5", title: "Bodydrag upwind", category: "Bodydrag", duration: "2:36", image: IMG.heroBg, description: "Mit dem Kite gegen den Wind schwimmen – die Grundlage, um dein Board zurückzuholen." },
+  { id: "video-6", title: "Bodydrag mit Board", category: "Bodydrag", duration: "3:12", image: IMG.kite2, description: "Das Board vor dir herziehen, bevor du es anschnallst." },
+  { id: "video-7", title: "Erste Meter fahren", category: "Erste Fahrversuche", duration: "6:37", image: IMG.kite3, description: "Kantendruck aufbauen und die ersten stehenden Meter auf dem Board." },
+  { id: "video-8", title: "Höhe laufen (Upwind)", category: "Erste Fahrversuche", duration: "5:48", image: IMG.kite1, description: "So verlierst du beim Fahren keinen Weg mehr gegen den Wind." },
+  { id: "video-9", title: "Erster Jump", category: "Tricks & Fortgeschritten", duration: "3:56", image: IMG.advancedBg, description: "Anlauf, Kitesteuerung und Landung für deinen ersten kontrollierten Sprung." },
+  { id: "video-10", title: "Toeside fahren", category: "Tricks & Fortgeschritten", duration: "3:46", image: IMG.kite3, description: "Die Fahrtrichtung wechseln und sicher auf der Zehenkante fahren." },
+  { id: "video-11", title: "Windfenster verstehen", category: "Wind- & Wetterkunde", duration: "3:58", image: IMG.intensiveBg, description: "Wie das Windfenster aufgebaut ist und warum Position im Fenster über Zug entscheidet." },
+  { id: "video-12", title: "Wettervorhersage lesen", category: "Wind- & Wetterkunde", duration: "4:18", image: IMG.intensiveBg, description: "Welche Vorhersage-Apps wir nutzen und worauf du für sichere Bedingungen achtest." },
 ];
 
 export const seedWatchedVideos: WatchedVideo[] = [
