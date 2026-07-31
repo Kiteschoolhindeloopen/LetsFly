@@ -15,7 +15,7 @@ export function BottomTabBar() {
   const pathname = usePathname();
 
   return (
-    <div className="sticky bottom-0 z-[100] flex border-t border-lf-border bg-lf-card px-1 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+    <div className="fixed inset-x-0 bottom-0 z-[100] mx-auto flex w-full max-w-[480px] border-t border-lf-border bg-lf-card px-1 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       {tabs.map((tab) => {
         const active = pathname.startsWith(tab.href);
         return (

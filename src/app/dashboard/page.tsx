@@ -92,6 +92,11 @@ export default function DashboardPage() {
     await load();
   }
 
+  async function handleMarkRead(notificationId: string) {
+    await getRepository().markNotificationRead(notificationId);
+    await load();
+  }
+
   const next = upcoming[0];
   const hasUnread = notifications.some((n) => n.unread);
 
@@ -251,9 +256,15 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 flex max-h-96 flex-col gap-1 overflow-y-auto">
               {notifications.map((n) => (
-                <div
+                <button
                   key={n.id}
-                  className={n.unread ? "flex gap-3 rounded-xl bg-lf-ocean-light p-3" : "flex gap-3 rounded-xl p-3"}
+                  type="button"
+                  onClick={() => n.unread && handleMarkRead(n.id)}
+                  className={
+                    n.unread
+                      ? "flex gap-3 rounded-xl bg-lf-ocean-light p-3 text-left"
+                      : "flex gap-3 rounded-xl p-3 text-left"
+                  }
                 >
                   <span className="text-lg">{n.icon}</span>
                   <div className="flex-1">
@@ -261,7 +272,7 @@ export default function DashboardPage() {
                     <p className="mt-0.5 text-sm text-lf-muted">{n.message}</p>
                     <p className="mt-1 text-xs text-lf-muted">{n.time}</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
             <button

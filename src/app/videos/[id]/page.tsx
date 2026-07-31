@@ -44,7 +44,7 @@ export default function VideoDetailPage() {
       <div className="relative overflow-hidden rounded-2xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={video.image} alt={video.title} className="h-72 w-full object-cover" />
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/85 text-xl text-lf-ocean">
             ▶
           </div>

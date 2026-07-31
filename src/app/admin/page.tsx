@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import {
   getRepository,
+  type AvailabilityWindow,
   type Booking,
+  type CourseCategory,
   type CourseOffering,
   type InstructorSlotRequest,
   type PackageRequest,
   type Slot,
   type User,
 } from "@/lib/data/repository";
-import { formatDateTime, formatEuro } from "@/lib/format";
+import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
+import { DEMO_ADMIN_ID } from "@/lib/demoSession";
 
 type Tab = "uebersicht" | "wind" | "anfragen" | "kundenanfragen" | "verwaltung";
 
@@ -61,6 +64,12 @@ export default function AdminPage() {
   const [instructors, setInstructors] = useState<User[]>([]);
   const [requests, setRequests] = useState<InstructorSlotRequest[]>([]);
   const [packageRequests, setPackageRequests] = useState<PackageRequest[]>([]);
+  const [windows, setWindows] = useState<AvailabilityWindow[]>([]);
+
+  const [newWindowStart, setNewWindowStart] = useState("");
+  const [newWindowEnd, setNewWindowEnd] = useState("");
+  const [newWindowCategory, setNewWindowCategory] = useState<CourseCategory>("PRIVATE_HOURS");
+  const [creatingWindow, setCreatingWindow] = useState(false);
 
   const [windPreset, setWindPreset] = useState<(typeof WIND_PRESETS)[number]["key"] | null>(null);
   const [windDone, setWindDone] = useState(false);
@@ -72,14 +81,16 @@ export default function AdminPage() {
 
   async function load() {
     const repo = getRepository();
-    const [allBookings, allCourses, allSlots, allInstructors, allRequests, allPackageRequests] = await Promise.all([
-      repo.getAllBookings(),
-      repo.getCourses(),
-      repo.getSlots(),
-      repo.getInstructors(),
-      repo.getAllRequests(),
-      repo.getAllPackageRequests(),
-    ]);
+    const [allBookings, allCourses, allSlots, allInstructors, allRequests, allPackageRequests, allWindows] =
+      await Promise.all([
+        repo.getAllBookings(),
+        repo.getCourses(),
+        repo.getSlots(),
+        repo.getInstructors(),
+        repo.getAllRequests(),
+        repo.getAllPackageRequests(),
+        repo.getAvailabilityWindows(),
+      ]);
 
     const courseById = new Map(allCourses.map((c) => [c.id, c]));
     const slotById = new Map(allSlots.map((s) => [s.id, s]));
@@ -106,6 +117,7 @@ export default function AdminPage() {
     setInstructors(allInstructors);
     setRequests(allRequests);
     setPackageRequests(allPackageRequests);
+    setWindows(allWindows.slice().sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
   }
 
   useEffect(() => {
@@ -151,6 +163,22 @@ export default function AdminPage() {
     await getRepository().resolvePackageRequest(requestId, decision);
     await load();
     setProcessingPkgRequestId(null);
+  }
+
+  async function handleCreateWindow(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newWindowStart || !newWindowEnd) return;
+    setCreatingWindow(true);
+    await getRepository().createWindow({
+      startsAt: new Date(newWindowStart).toISOString(),
+      endsAt: new Date(newWindowEnd).toISOString(),
+      courseCategory: newWindowCategory,
+      createdByAdminId: DEMO_ADMIN_ID,
+    });
+    setNewWindowStart("");
+    setNewWindowEnd("");
+    await load();
+    setCreatingWindow(false);
   }
 
   async function handleProposeDate(requestId: string) {
@@ -457,6 +485,67 @@ export default function AdminPage() {
                     .join("")}
                 </div>
                 <p className="text-sm font-medium text-foreground">{i.name}</p>
+              </div>
+            ))}
+          </div>
+
+          <h2 className="mt-8 text-sm font-semibold text-foreground">Verfügbarkeit für Lehrer freigeben</h2>
+          <p className="mt-1 text-sm text-lf-muted">
+            Zeitraum freigeben — pro passendem Angebot entsteht ein offenes Zeitfenster, das Lehrer unter
+            „Verfügbarkeit“ übernehmen können.
+          </p>
+          <form
+            onSubmit={handleCreateWindow}
+            className="mt-3 flex flex-col gap-3 rounded-2xl border border-lf-border bg-lf-card p-5"
+          >
+            <select
+              value={newWindowCategory}
+              onChange={(e) => setNewWindowCategory(e.target.value as CourseCategory)}
+              className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="PRIVATE_HOURS">{categoryLabels.PRIVATE_HOURS}</option>
+              <option value="GROUP_CAMP">{categoryLabels.GROUP_CAMP}</option>
+            </select>
+            <div className="flex gap-3">
+              <input
+                type="datetime-local"
+                value={newWindowStart}
+                onChange={(e) => setNewWindowStart(e.target.value)}
+                required
+                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+              />
+              <input
+                type="datetime-local"
+                value={newWindowEnd}
+                onChange={(e) => setNewWindowEnd(e.target.value)}
+                required
+                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={creatingWindow}
+              className="self-start rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {creatingWindow ? "Erstelle…" : "Zeitfenster freigeben"}
+            </button>
+          </form>
+
+          <div className="mt-3 flex flex-col gap-2">
+            {windows.length === 0 && <p className="text-sm text-lf-muted">Noch keine Zeitfenster freigegeben.</p>}
+            {windows.map((w) => (
+              <div key={w.id} className="flex items-center justify-between gap-3 rounded-xl border border-lf-border p-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {formatDateTime(w.startsAt)} – {formatDateTime(w.endsAt)}
+                  </p>
+                  <p className="text-xs text-lf-muted">
+                    {w.courseCategory ? categoryLabels[w.courseCategory] : "Alle Angebote"}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-md bg-lf-ocean-light px-2 py-0.5 text-[10.5px] font-bold text-lf-ocean">
+                  {w.status === "OPEN" ? "Offen" : w.status === "CLAIMED" ? "Übernommen" : "Voll"}
+                </span>
               </div>
             ))}
           </div>

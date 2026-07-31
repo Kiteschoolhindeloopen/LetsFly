@@ -38,7 +38,10 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="mt-4.5 text-center text-xs text-lf-muted">
-        Noch kein Konto? <span className="text-lf-ocean">Jetzt registrieren</span>
+        Noch kein Konto?{" "}
+        <button type="button" onClick={() => router.push("/onboarding")} className="text-lf-ocean">
+          Jetzt registrieren
+        </button>
       </p>
     </div>
   );

@@ -281,6 +281,43 @@ export const mockRepository: Repository = {
       createdByAdminId: input.createdByAdminId,
     };
     saveCollection(KEYS.windows, [window, ...getWindows()]);
+
+    // Generate one open, unclaimed slot per matching course so instructors
+    // have something to pick up in "Verfügbarkeit" — mirrors seedSlots'
+    // relationship to seedWindows (window-1 -> slot-3/4/5).
+    const coursesForWindow = getCourses().filter(
+      (c) => c.active && (!input.courseCategory || c.category === input.courseCategory)
+    );
+    const newSlots: Slot[] = coursesForWindow.map((course) => {
+      if (course.category === "GROUP_CAMP") {
+        return {
+          id: newId("slot"),
+          courseOfferingId: course.id,
+          availabilityWindowId: window.id,
+          startsAt: window.startsAt,
+          endsAt: window.endsAt,
+          capacity: course.maxGroupSize ?? 4,
+          bookedCount: 0,
+          status: "OPEN",
+        };
+      }
+      const slotEnd = new Date(window.startsAt);
+      slotEnd.setHours(slotEnd.getHours() + 2);
+      return {
+        id: newId("slot"),
+        courseOfferingId: course.id,
+        availabilityWindowId: window.id,
+        startsAt: window.startsAt,
+        endsAt: slotEnd.toISOString(),
+        capacity: 1,
+        bookedCount: 0,
+        status: "OPEN",
+      };
+    });
+    if (newSlots.length > 0) {
+      saveCollection(KEYS.slots, [...newSlots, ...getSlotsRaw()]);
+    }
+
     return window;
   },
 
