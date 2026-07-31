@@ -74,6 +74,7 @@ export interface Repository {
   getSlots(filter?: SlotFilter): Promise<Slot[]>;
 
   getCustomer(id: string): Promise<User | null>;
+  getUserByEmail(email: string): Promise<User | null>;
   getMyBookings(customerId: string): Promise<Booking[]>;
   getMyPackages(customerId: string): Promise<HourPackagePurchase[]>;
   createBooking(input: CreateBookingInput): Promise<Booking>;

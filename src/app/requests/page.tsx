@@ -7,7 +7,7 @@ import {
   type PackageRequest,
 } from "@/lib/data/repository";
 import { formatEuro } from "@/lib/format";
-import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { getCurrentCustomerId } from "@/lib/demoSession";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 function todayIsoDate(): string {
@@ -44,8 +44,8 @@ export default function RequestsPage() {
     const repo = getRepository();
     const [allCourses, customer, requests] = await Promise.all([
       repo.getCourses(),
-      repo.getCustomer(DEMO_CUSTOMER_ID),
-      repo.getMyPackageRequests(DEMO_CUSTOMER_ID),
+      repo.getCustomer(getCurrentCustomerId()),
+      repo.getMyPackageRequests(getCurrentCustomerId()),
     ]);
     setCourses(allCourses);
     setCustomerEmail(customer?.email ?? "");
@@ -68,7 +68,7 @@ export default function RequestsPage() {
     if (!courseId || !date) return;
     setSubmitting(true);
     await getRepository().createPackageRequest({
-      customerId: DEMO_CUSTOMER_ID,
+      customerId: getCurrentCustomerId(),
       courseOfferingId: courseId,
       requestedDate: new Date(date).toISOString(),
       note: note || undefined,

@@ -9,7 +9,7 @@ import {
   type User,
 } from "@/lib/data/repository";
 import { formatDateTime } from "@/lib/format";
-import { DEMO_INSTRUCTOR_ID } from "@/lib/demoSession";
+import { getCurrentInstructorId } from "@/lib/demoSession";
 
 type Tab = "verfuegbarkeit" | "schueler" | "anfragen";
 
@@ -36,12 +36,12 @@ export default function InstructorPage() {
   async function load() {
     const repo = getRepository();
     const [me, allCourses, allSlots, allBookings, mySlots, myRequests] = await Promise.all([
-      repo.getCustomer(DEMO_INSTRUCTOR_ID),
+      repo.getCustomer(getCurrentInstructorId()),
       repo.getCourses(),
       repo.getSlots(),
       repo.getAllBookings(),
-      repo.getMySlots(DEMO_INSTRUCTOR_ID),
-      repo.getMyRequests(DEMO_INSTRUCTOR_ID),
+      repo.getMySlots(getCurrentInstructorId()),
+      repo.getMyRequests(getCurrentInstructorId()),
     ]);
 
     setInstructor(me);
@@ -70,7 +70,7 @@ export default function InstructorPage() {
 
   async function handleClaim(slotId: string) {
     setClaimingId(slotId);
-    await getRepository().claimSlot(slotId, DEMO_INSTRUCTOR_ID);
+    await getRepository().claimSlot(slotId, getCurrentInstructorId());
     await load();
     setClaimingId(null);
   }
@@ -80,7 +80,7 @@ export default function InstructorPage() {
     if (!reqCourseId || !reqStart || !reqEnd) return;
     setReqSubmitting(true);
     await getRepository().createInstructorRequest({
-      instructorId: DEMO_INSTRUCTOR_ID,
+      instructorId: getCurrentInstructorId(),
       courseOfferingId: reqCourseId,
       requestedStartsAt: reqStart,
       requestedEndsAt: reqEnd,

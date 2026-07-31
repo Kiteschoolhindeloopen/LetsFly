@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getRepository, type Video, type VideoCategory } from "@/lib/data/repository";
-import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { getCurrentCustomerId } from "@/lib/demoSession";
 
 const CATEGORIES: VideoCategory[] = [
   "Sicherheit & Material",
@@ -21,7 +21,7 @@ export default function VideosPage() {
 
   useEffect(() => {
     const repo = getRepository();
-    Promise.all([repo.getVideos(), repo.getWatchedVideoIds(DEMO_CUSTOMER_ID)]).then(
+    Promise.all([repo.getVideos(), repo.getWatchedVideoIds(getCurrentCustomerId())]).then(
       ([allVideos, watched]) => {
         setVideos(allVideos);
         setWatchedIds(new Set(watched));

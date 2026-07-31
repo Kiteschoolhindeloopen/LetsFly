@@ -12,7 +12,7 @@ import {
   type User,
 } from "@/lib/data/repository";
 import { formatDateTime, formatEuro } from "@/lib/format";
-import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { getCurrentCustomerId } from "@/lib/demoSession";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 interface BookingRow {
@@ -36,12 +36,12 @@ export default function DashboardPage() {
   async function load() {
     const repo = getRepository();
     const [customerData, myPackages, myBookings, courses, slots, myNotifications] = await Promise.all([
-      repo.getCustomer(DEMO_CUSTOMER_ID),
-      repo.getMyPackages(DEMO_CUSTOMER_ID),
-      repo.getMyBookings(DEMO_CUSTOMER_ID),
+      repo.getCustomer(getCurrentCustomerId()),
+      repo.getMyPackages(getCurrentCustomerId()),
+      repo.getMyBookings(getCurrentCustomerId()),
       repo.getCourses(),
       repo.getSlots(),
-      repo.getNotifications(DEMO_CUSTOMER_ID),
+      repo.getNotifications(getCurrentCustomerId()),
     ]);
 
     const courseById = new Map(courses.map((c) => [c.id, c]));
@@ -94,7 +94,7 @@ export default function DashboardPage() {
   }
 
   async function handleMarkAllRead() {
-    await getRepository().markAllNotificationsRead(DEMO_CUSTOMER_ID);
+    await getRepository().markAllNotificationsRead(getCurrentCustomerId());
     await load();
   }
 

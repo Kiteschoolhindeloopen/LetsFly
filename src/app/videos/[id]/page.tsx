@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getRepository, type Video } from "@/lib/data/repository";
-import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { getCurrentCustomerId } from "@/lib/demoSession";
 
 export default function VideoDetailPage() {
   const params = useParams<{ id: string }>();
@@ -19,7 +19,7 @@ export default function VideoDetailPage() {
       setVideo(current);
       if (current) {
         setRelated(videos.filter((v) => v.category === current.category && v.id !== current.id).slice(0, 3));
-        repo.markVideoWatched(DEMO_CUSTOMER_ID, current.id);
+        repo.markVideoWatched(getCurrentCustomerId(), current.id);
       }
     });
   }, [params.id]);

@@ -2,14 +2,29 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getRepository } from "@/lib/data/repository";
+import { setLoggedInUser } from "@/lib/demoSession";
+
+const ROLE_ROUTES = {
+  CUSTOMER: "/dashboard",
+  INSTRUCTOR: "/instructor",
+  ADMIN: "/admin",
+} as const;
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/onboarding");
+    const user = await getRepository().getUserByEmail(email);
+    if (!user) {
+      // Unbekannte E-Mail: noch kein Konto -> Registrierung.
+      router.push("/onboarding");
+      return;
+    }
+    setLoggedInUser(user);
+    router.push(ROLE_ROUTES[user.role]);
   }
 
   return (

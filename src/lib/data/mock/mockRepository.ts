@@ -125,6 +125,11 @@ export const mockRepository: Repository = {
     return getUsers().find((u) => u.id === id) ?? null;
   },
 
+  async getUserByEmail(email: string) {
+    const normalized = email.trim().toLowerCase();
+    return getUsers().find((u) => u.email.toLowerCase() === normalized) ?? null;
+  },
+
   async getMyBookings(customerId: string) {
     return getBookings().filter((b) => b.customerId === customerId);
   },

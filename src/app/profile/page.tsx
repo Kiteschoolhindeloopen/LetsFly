@@ -11,7 +11,7 @@ import {
   type User,
 } from "@/lib/data/repository";
 import { formatDateTime, formatEuro } from "@/lib/format";
-import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { getCurrentCustomerId } from "@/lib/demoSession";
 
 interface HistoryRow {
   booking: Booking;
@@ -46,9 +46,9 @@ export default function ProfilePage() {
   async function load() {
     const repo = getRepository();
     const [customerData, packages, bookings, courses, slots] = await Promise.all([
-      repo.getCustomer(DEMO_CUSTOMER_ID),
-      repo.getMyPackages(DEMO_CUSTOMER_ID),
-      repo.getMyBookings(DEMO_CUSTOMER_ID),
+      repo.getCustomer(getCurrentCustomerId()),
+      repo.getMyPackages(getCurrentCustomerId()),
+      repo.getMyBookings(getCurrentCustomerId()),
       repo.getCourses(),
       repo.getSlots(),
     ]);

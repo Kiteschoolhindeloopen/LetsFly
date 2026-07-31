@@ -10,7 +10,7 @@ import {
   type Slot,
 } from "@/lib/data/repository";
 import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
-import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { getCurrentCustomerId } from "@/lib/demoSession";
 import { WaiverConsent } from "@/components/WaiverConsent";
 
 const HOURS = [10, 11, 12, 13, 14, 15, 16, 17];
@@ -61,7 +61,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
     const repo = getRepository();
     const [slots, packages] = await Promise.all([
       repo.getSlots({ from: weekStart.toISOString(), to: weekEnd.toISOString() }),
-      repo.getMyPackages(DEMO_CUSTOMER_ID),
+      repo.getMyPackages(getCurrentCustomerId()),
     ]);
     const taken = new Set(
       slots
@@ -116,7 +116,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
       const endsAt = new Date(selected.date);
       endsAt.setHours(endsAt.getHours() + 1);
       await getRepository().bookHourSlot({
-        customerId: DEMO_CUSTOMER_ID,
+        customerId: getCurrentCustomerId(),
         courseOfferingId,
         hourPackagePurchaseId: pkg?.id,
         startsAt: selected.date.toISOString(),
@@ -298,7 +298,7 @@ function BookPageContent() {
 
   async function handleBookCamp(slotId: string, waiverAccepted: boolean) {
     setCampBookingId(slotId);
-    await getRepository().createBooking({ customerId: DEMO_CUSTOMER_ID, slotId, waiverAccepted });
+    await getRepository().createBooking({ customerId: getCurrentCustomerId(), slotId, waiverAccepted });
     setCampConfirmedId(slotId);
     setCampBookingId(null);
     setCampConfirming(null);
