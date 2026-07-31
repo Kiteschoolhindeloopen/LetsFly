@@ -90,6 +90,22 @@ export const mockRepository: Repository = {
     return getCourses().filter((c) => c.active);
   },
 
+  async getAllCourses() {
+    return getCourses();
+  },
+
+  async updateCourse(courseId, updates) {
+    const courses = getCourses();
+    const idx = courses.findIndex((c) => c.id === courseId);
+    if (idx === -1) throw new Error(`Course ${courseId} not found`);
+    const updated: CourseOffering = { ...courses[idx], ...updates };
+    saveCollection(
+      KEYS.courses,
+      courses.map((c) => (c.id === courseId ? updated : c))
+    );
+    return updated;
+  },
+
   async getSlots(filter?: SlotFilter) {
     let slots = getSlotsRaw();
     if (filter?.category) {
@@ -118,6 +134,9 @@ export const mockRepository: Repository = {
   },
 
   async createBooking(input: CreateBookingInput) {
+    if (!input.waiverAccepted) {
+      throw new Error("Haftungsausschluss muss akzeptiert werden, bevor gebucht werden kann.");
+    }
     const slots = getSlotsRaw();
     const slot = slots.find((s) => s.id === input.slotId);
     if (!slot) throw new Error(`Slot ${input.slotId} not found`);
@@ -146,6 +165,7 @@ export const mockRepository: Repository = {
       paymentStatus: "UNPAID",
       notes: input.notes,
       createdAt: new Date().toISOString(),
+      waiverAcceptedAt: new Date().toISOString(),
     };
     saveCollection(KEYS.bookings, [booking, ...getBookings()]);
 
@@ -165,6 +185,9 @@ export const mockRepository: Repository = {
   },
 
   async bookHourSlot(input: BookHourSlotInput) {
+    if (!input.waiverAccepted) {
+      throw new Error("Haftungsausschluss muss akzeptiert werden, bevor gebucht werden kann.");
+    }
     const slots = getSlotsRaw();
     let slot = slots.find(
       (s) => s.courseOfferingId === input.courseOfferingId && s.startsAt === input.startsAt
@@ -187,6 +210,7 @@ export const mockRepository: Repository = {
       customerId: input.customerId,
       slotId: slot.id,
       hourPackagePurchaseId: input.hourPackagePurchaseId,
+      waiverAccepted: input.waiverAccepted,
     });
   },
 

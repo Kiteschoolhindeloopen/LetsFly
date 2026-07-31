@@ -79,12 +79,25 @@ export default function AdminPage() {
   const [proposingId, setProposingId] = useState<string | null>(null);
   const [proposedDateInput, setProposedDateInput] = useState("");
 
+  const [revenue, setRevenue] = useState<{ totalCents: number; byCourse: Map<string, number> }>({
+    totalCents: 0,
+    byCourse: new Map(),
+  });
+  const [confirmCancelBookingId, setConfirmCancelBookingId] = useState<string | null>(null);
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [courseDraftName, setCourseDraftName] = useState("");
+  const [courseDraftPriceEuro, setCourseDraftPriceEuro] = useState("");
+  const [courseDraftActive, setCourseDraftActive] = useState(true);
+  const [savingCourse, setSavingCourse] = useState(false);
+
   async function load() {
     const repo = getRepository();
     const [allBookings, allCourses, allSlots, allInstructors, allRequests, allPackageRequests, allWindows] =
       await Promise.all([
         repo.getAllBookings(),
-        repo.getCourses(),
+        repo.getAllCourses(),
         repo.getSlots(),
         repo.getInstructors(),
         repo.getAllRequests(),
@@ -112,12 +125,24 @@ export default function AdminPage() {
     }
     built.sort((a, b) => a.slot.startsAt.localeCompare(b.slot.startsAt));
 
+    let totalCents = 0;
+    const byCourse = new Map<string, number>();
+    for (const booking of allBookings.filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")) {
+      const slot = slotById.get(booking.slotId);
+      const course = slot && courseById.get(slot.courseOfferingId);
+      if (!slot || !course) continue;
+      const amount = booking.priceCentsPaid ?? (slot.priceCentsOverride ?? course.priceCents) * booking.seats;
+      totalCents += amount;
+      byCourse.set(course.id, (byCourse.get(course.id) ?? 0) + amount);
+    }
+
     setRows(built);
     setCourses(allCourses);
     setInstructors(allInstructors);
     setRequests(allRequests);
     setPackageRequests(allPackageRequests);
     setWindows(allWindows.slice().sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
+    setRevenue({ totalCents, byCourse });
   }
 
   useEffect(() => {
@@ -149,6 +174,42 @@ export default function AdminPage() {
     setWindCancelledRows(windAffected);
     setWindDone(true);
     await load();
+  }
+
+  async function handleCancelBooking(row: BookingRow) {
+    setCancellingBookingId(row.booking.id);
+    const repo = getRepository();
+    await repo.cancelBooking(row.booking.id);
+    await repo.createNotification({
+      customerId: row.booking.customerId,
+      icon: "🚫",
+      title: "Termin storniert",
+      message: `Dein Termin am ${formatDateTime(row.slot.startsAt)} (${row.course.name}) wurde von der Kiteschule storniert.`,
+    });
+    setConfirmCancelBookingId(null);
+    await load();
+    setCancellingBookingId(null);
+  }
+
+  function startEditCourse(course: CourseOffering) {
+    setEditingCourseId(course.id);
+    setCourseDraftName(course.name);
+    setCourseDraftPriceEuro((course.priceCents / 100).toFixed(2));
+    setCourseDraftActive(course.active);
+  }
+
+  async function handleSaveCourse(courseId: string) {
+    const priceCents = Math.round(parseFloat(courseDraftPriceEuro.replace(",", ".")) * 100);
+    if (!courseDraftName.trim() || Number.isNaN(priceCents)) return;
+    setSavingCourse(true);
+    await getRepository().updateCourse(courseId, {
+      name: courseDraftName.trim(),
+      priceCents,
+      active: courseDraftActive,
+    });
+    setEditingCourseId(null);
+    await load();
+    setSavingCourse(false);
   }
 
   async function handleResolveRequest(requestId: string, decision: "APPROVED" | "REJECTED") {
@@ -237,6 +298,26 @@ export default function AdminPage() {
             </div>
           </div>
 
+          <div className="mt-3 rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950">
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+              {formatEuro(revenue.totalCents)}
+            </p>
+            <p className="mt-1 text-xs text-lf-muted">
+              Gebuchter Umsatz (bestätigt/abgeschlossen) — noch keine echte Zahlungsabwicklung, kein tatsächlich
+              eingenommenes Geld.
+            </p>
+            {revenue.byCourse.size > 0 && (
+              <div className="mt-3 flex flex-col gap-1 border-t border-emerald-200 pt-3 dark:border-emerald-900">
+                {Array.from(revenue.byCourse.entries()).map(([courseId, amount]) => (
+                  <div key={courseId} className="flex justify-between text-xs">
+                    <span className="text-lf-muted">{courseById.get(courseId)?.name ?? "Unbekannt"}</span>
+                    <span className="font-semibold text-foreground">{formatEuro(amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <h2 className="mt-6 text-sm font-semibold text-foreground">Alle bevorstehenden Buchungen</h2>
           <div className="mt-3 flex flex-col gap-2">
             {rows.map((r) => (
@@ -251,6 +332,30 @@ export default function AdminPage() {
                     {r.instructorName ? ` · ${r.instructorName}` : ""}
                   </p>
                 </div>
+                {confirmCancelBookingId === r.booking.id ? (
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      onClick={() => handleCancelBooking(r)}
+                      disabled={cancellingBookingId === r.booking.id}
+                      className="rounded-full bg-red-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      {cancellingBookingId === r.booking.id ? "…" : "Ja, stornieren"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmCancelBookingId(null)}
+                      className="rounded-full border border-lf-border px-3 py-1.5 text-xs font-semibold text-foreground"
+                    >
+                      Doch nicht
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmCancelBookingId(r.booking.id)}
+                    className="shrink-0 rounded-full border border-red-300 px-3 py-1.5 text-xs font-bold text-red-600 dark:border-red-900 dark:text-red-400"
+                  >
+                    Stornieren
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -467,9 +572,64 @@ export default function AdminPage() {
           <h2 className="text-sm font-semibold text-foreground">Pakete &amp; Preise</h2>
           <div className="mt-2 flex flex-col divide-y divide-lf-border rounded-2xl border border-lf-border bg-lf-card">
             {courses.map((c) => (
-              <div key={c.id} className="flex items-center justify-between px-4 py-3">
-                <p className="text-sm font-medium text-foreground">{c.name}</p>
-                <p className="text-sm font-bold text-lf-ocean">{formatEuro(c.priceCents)}</p>
+              <div key={c.id} className="px-4 py-3">
+                {editingCourseId === c.id ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      value={courseDraftName}
+                      onChange={(e) => setCourseDraftName(e.target.value)}
+                      className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={courseDraftPriceEuro}
+                        onChange={(e) => setCourseDraftPriceEuro(e.target.value)}
+                        inputMode="decimal"
+                        className="w-28 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+                      />
+                      <span className="text-xs text-lf-muted">€</span>
+                      <label className="ml-auto flex items-center gap-1.5 text-xs font-medium text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={courseDraftActive}
+                          onChange={(e) => setCourseDraftActive(e.target.checked)}
+                        />
+                        Aktiv
+                      </label>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSaveCourse(c.id)}
+                        disabled={savingCourse}
+                        className="rounded-full bg-lf-ocean px-3.5 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                      >
+                        {savingCourse ? "…" : "Speichern"}
+                      </button>
+                      <button
+                        onClick={() => setEditingCourseId(null)}
+                        className="rounded-full border border-lf-border px-3.5 py-1.5 text-xs font-semibold text-foreground"
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {c.name}
+                      {!c.active && <span className="ml-2 text-xs font-normal text-lf-muted">(inaktiv)</span>}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p className="text-sm font-bold text-lf-ocean">{formatEuro(c.priceCents)}</p>
+                      <button
+                        onClick={() => startEditCourse(c)}
+                        className="rounded-full border border-lf-border px-3 py-1 text-xs font-semibold text-foreground"
+                      >
+                        Bearbeiten
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -27,6 +27,7 @@ export interface CreateBookingInput {
   seats?: number;
   hourPackagePurchaseId?: string;
   notes?: string;
+  waiverAccepted: boolean;
 }
 
 export interface BookHourSlotInput {
@@ -35,6 +36,7 @@ export interface BookHourSlotInput {
   hourPackagePurchaseId?: string;
   startsAt: string;
   endsAt: string;
+  waiverAccepted: boolean;
 }
 
 export interface CreateInstructorRequestInput {
@@ -64,6 +66,11 @@ export interface CreatePackageRequestInput {
  */
 export interface Repository {
   getCourses(): Promise<CourseOffering[]>;
+  getAllCourses(): Promise<CourseOffering[]>;
+  updateCourse(
+    courseId: string,
+    updates: Partial<Pick<CourseOffering, "name" | "priceCents" | "active">>
+  ): Promise<CourseOffering>;
   getSlots(filter?: SlotFilter): Promise<Slot[]>;
 
   getCustomer(id: string): Promise<User | null>;

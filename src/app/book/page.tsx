@@ -11,6 +11,7 @@ import {
 } from "@/lib/data/repository";
 import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
 import { DEMO_CUSTOMER_ID } from "@/lib/demoSession";
+import { WaiverConsent } from "@/components/WaiverConsent";
 
 const HOURS = [10, 11, 12, 13, 14, 15, 16, 17];
 const WEEKDAY_LABELS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -49,6 +50,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
   const [booking, setBooking] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
 
   const weekStart = new Date(startOfWeek(new Date()));
   weekStart.setDate(weekStart.getDate() + weekOffset * 7);
@@ -102,6 +104,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
     if (cell.isPast || cell.isBooked) return;
     setErrorMessage(null);
     setConfirmed(false);
+    setWaiverAccepted(false);
     setSelected(cell);
   }
 
@@ -118,6 +121,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
         hourPackagePurchaseId: pkg?.id,
         startsAt: selected.date.toISOString(),
         endsAt: endsAt.toISOString(),
+        waiverAccepted,
       });
       setConfirmed(true);
       await load();
@@ -232,6 +236,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                     </span>
                   </div>
                 </div>
+                <WaiverConsent accepted={waiverAccepted} onChange={setWaiverAccepted} />
                 <div className="mt-5 flex gap-2.5">
                   <button
                     onClick={() => setSelected(null)}
@@ -241,7 +246,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                   </button>
                   <button
                     onClick={handleConfirm}
-                    disabled={booking}
+                    disabled={booking || !waiverAccepted}
                     className="flex-1 rounded-xl bg-lf-ocean py-3.5 text-sm font-bold text-white disabled:opacity-50"
                   >
                     {booking ? "…" : "Bestätigen"}
@@ -265,6 +270,8 @@ function BookPageContent() {
   const [campRows, setCampRows] = useState<CampRow[]>([]);
   const [campBookingId, setCampBookingId] = useState<string | null>(null);
   const [campConfirmedId, setCampConfirmedId] = useState<string | null>(null);
+  const [campConfirming, setCampConfirming] = useState<CampRow | null>(null);
+  const [campWaiverAccepted, setCampWaiverAccepted] = useState(false);
 
   useEffect(() => {
     getRepository()
@@ -289,11 +296,12 @@ function BookPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
-  async function handleBookCamp(slotId: string) {
+  async function handleBookCamp(slotId: string, waiverAccepted: boolean) {
     setCampBookingId(slotId);
-    await getRepository().createBooking({ customerId: DEMO_CUSTOMER_ID, slotId });
+    await getRepository().createBooking({ customerId: DEMO_CUSTOMER_ID, slotId, waiverAccepted });
     setCampConfirmedId(slotId);
     setCampBookingId(null);
+    setCampConfirming(null);
     await loadCamps();
   }
 
@@ -357,15 +365,61 @@ function BookPageContent() {
                 </span>
               ) : (
                 <button
-                  onClick={() => handleBookCamp(slot.id)}
-                  disabled={campBookingId === slot.id}
+                  onClick={() => {
+                    setCampWaiverAccepted(false);
+                    setCampConfirming({ slot, course, freeSeats });
+                  }}
                   className="shrink-0 rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  {campBookingId === slot.id ? "Buche…" : "Buchen"}
+                  Buchen
                 </button>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {campConfirming && (
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40"
+          onClick={() => setCampConfirming(null)}
+        >
+          <div
+            className="w-full max-w-[480px] rounded-t-3xl bg-lf-card p-6 pb-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-lf-border" />
+            <p className="text-base font-extrabold text-foreground">Buchung bestätigen</p>
+            <p className="mt-1 text-sm text-lf-muted">{formatDateTime(campConfirming.slot.startsAt)}</p>
+            <div className="mt-4 flex flex-col gap-2 rounded-xl bg-lf-ocean-light p-3.5">
+              <div className="flex justify-between text-[13px]">
+                <span className="text-lf-muted">Angebot</span>
+                <span className="font-bold text-foreground">{campConfirming.course.name}</span>
+              </div>
+              <div className="flex justify-between text-[13px]">
+                <span className="text-lf-muted">Kosten</span>
+                <span className="font-bold text-foreground">
+                  {formatEuro(campConfirming.slot.priceCentsOverride ?? campConfirming.course.priceCents)}
+                </span>
+              </div>
+            </div>
+            <WaiverConsent accepted={campWaiverAccepted} onChange={setCampWaiverAccepted} />
+            <div className="mt-5 flex gap-2.5">
+              <button
+                onClick={() => setCampConfirming(null)}
+                className="flex-1 rounded-xl border border-lf-border py-3.5 text-sm font-bold text-foreground"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => handleBookCamp(campConfirming.slot.id, campWaiverAccepted)}
+                disabled={campBookingId === campConfirming.slot.id || !campWaiverAccepted}
+                className="flex-1 rounded-xl bg-lf-ocean py-3.5 text-sm font-bold text-white disabled:opacity-50"
+              >
+                {campBookingId === campConfirming.slot.id ? "…" : "Bestätigen"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>

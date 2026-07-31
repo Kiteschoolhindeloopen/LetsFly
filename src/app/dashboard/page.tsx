@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [windBannerDismissed, setWindBannerDismissed] = useState(false);
+  const [windBannerActive, setWindBannerActive] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   async function load() {
@@ -68,10 +69,15 @@ export default function DashboardPage() {
       })
       .sort((a, b) => a.slot.startsAt.localeCompare(b.slot.startsAt));
 
+    const WIND_WARNING_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+    const msUntilNext = rows[0] ? new Date(rows[0].slot.startsAt).getTime() - Date.now() : null;
+    const withinWindWindow = msUntilNext !== null && msUntilNext >= 0 && msUntilNext <= WIND_WARNING_WINDOW_MS;
+
     setCustomer(customerData);
     setPkg(myPackages[0] ?? null);
     setUpcoming(rows);
     setNotifications(myNotifications);
+    setWindBannerActive(withinWindWindow);
   }
 
   useEffect(() => {
@@ -99,6 +105,7 @@ export default function DashboardPage() {
 
   const next = upcoming[0];
   const hasUnread = notifications.some((n) => n.unread);
+  const showWindBanner = !windBannerDismissed && windBannerActive;
 
   return (
     <div className="lf-scroll flex flex-1 flex-col overflow-y-auto pb-6">
@@ -149,12 +156,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {!windBannerDismissed && (
+      {showWindBanner && next && (
         <div className="mx-5 mt-4 flex gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-900 dark:bg-amber-950">
           <span className="text-lg leading-none">💨</span>
           <div className="flex-1">
             <p className="text-[13.5px] leading-relaxed text-amber-900 dark:text-amber-200">
-              Ein Termin könnte wegen Windvorhersage abgesagt werden — wir informieren dich rechtzeitig.
+              Dein Termin am {formatDateTime(next.slot.startsAt)} ({next.course.name}) könnte wegen Windvorhersage
+              abgesagt werden — wir informieren dich rechtzeitig.
             </p>
             <div className="mt-2.5 flex gap-2.5">
               <button

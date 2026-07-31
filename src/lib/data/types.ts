@@ -76,6 +76,7 @@ export interface Booking {
   rating?: number;
   createdAt: string;
   cancelledAt?: string;
+  waiverAcceptedAt?: string;
 }
 
 export type VideoCategory =
