@@ -31,3 +31,7 @@ Definiert in `src/app/globals.css` (`:root`) und als Tailwind-Utilities über `@
 
 Keine anderen Marken-/Akzentfarben einführen, ohne Rückfrage. Bestehende `--lf-*`-Variablen sind von dieser Palette abgeleitet (z.B. `--lf-ocean` = `--primary`) — neue Komponenten sollen bevorzugt direkt `--text`, `--background`, `--primary`, `--secondary`, `--accent` nutzen statt neuer `--lf-*`-Namen.
 
+# Workflow: Änderungen zeigen
+
+Nach jeder abgeschlossenen Claude-Aufgabe mit sichtbaren UI-/Code-Änderungen: lokalen Dev-Server starten (`npm run dev`, falls nicht schon aktiv) und die neuen Changes im Browser zeigen (Screenshot oder kurze Beschreibung des geöffneten Screens), statt nur den Code-Diff zu melden.
+
