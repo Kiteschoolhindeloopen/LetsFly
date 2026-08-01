@@ -14,6 +14,9 @@ import {
 import { formatDateTime, formatEuro } from "@/lib/format";
 import { getCurrentCustomerId } from "@/lib/demoSession";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
+import { fetchCurrentWindKn } from "@/lib/wind/openMeteo";
+import { getWindThresholds } from "@/lib/wind/config";
+import { categorizeWind, WIND_TONE_TEXT_CLASS } from "@/lib/wind/categorize";
 
 interface BookingRow {
   booking: Booking;
@@ -32,6 +35,8 @@ export default function DashboardPage() {
   const [windBannerDismissed, setWindBannerDismissed] = useState(false);
   const [windBannerActive, setWindBannerActive] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [currentWindKn, setCurrentWindKn] = useState<number | null>(null);
+  const [windThresholds] = useState(() => getWindThresholds());
 
   async function load() {
     const repo = getRepository();
@@ -86,6 +91,12 @@ export default function DashboardPage() {
 
   useLiveRefresh(load);
 
+  useEffect(() => {
+    fetchCurrentWindKn()
+      .then(setCurrentWindKn)
+      .catch(() => setCurrentWindKn(null));
+  }, []);
+
   async function handleCancel(bookingId: string) {
     setCancellingId(bookingId);
     await getRepository().cancelBooking(bookingId);
@@ -106,6 +117,7 @@ export default function DashboardPage() {
   const next = upcoming[0];
   const hasUnread = notifications.some((n) => n.unread);
   const showWindBanner = !windBannerDismissed && windBannerActive;
+  const currentWind = currentWindKn !== null ? categorizeWind(currentWindKn, windThresholds) : null;
 
   return (
     <div className="lf-scroll flex flex-1 flex-col overflow-y-auto pb-6">
@@ -166,6 +178,19 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {currentWind && currentWindKn !== null && (
+        <div className="mx-5 mt-4 rounded-2xl border border-lf-border bg-lf-card p-4.5 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wide text-lf-muted">Aktuelle Windbedingungen</p>
+          <div className="mt-1.5 flex items-baseline gap-2">
+            <span className="text-2xl font-extrabold text-foreground">{Math.round(currentWindKn)}kn</span>
+            <span className={`text-sm font-bold ${WIND_TONE_TEXT_CLASS[currentWind.tone]}`}>
+              {currentWind.label}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-lf-muted">Workum, IJsselmeer</p>
+        </div>
+      )}
 
       {showWindBanner && next && (
         <div className="mx-5 mt-4 flex gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-900 dark:bg-amber-950">
