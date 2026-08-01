@@ -30,10 +30,10 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 flex-col bg-gradient-to-b from-lf-ocean-light to-lf-card">
       <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl bg-lf-ocean shadow-lg shadow-lf-ocean/25">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-lg shadow-lf-ocean/25">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://kiteschoolhindeloopen.com/images/logo.webp"
+            src="/icons/red-waves.png"
             alt="LetsFly Logo"
             className="h-[70%] w-[70%] object-contain"
           />
