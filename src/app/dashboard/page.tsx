@@ -209,7 +209,19 @@ export default function DashboardPage() {
           onClick={() => router.push("/book")}
           className="flex flex-1 flex-col items-center gap-1.5 rounded-2xl bg-lf-ocean py-4 text-[13.5px] font-bold text-white"
         >
-          <span className="text-lg">📅</span>Termin buchen
+          <svg
+            className="h-[18px] w-[18px]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3.5 2" />
+          </svg>
+          Termin buchen
         </button>
         <button
           onClick={() => router.push("/videos")}
