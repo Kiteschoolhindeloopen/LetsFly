@@ -199,11 +199,11 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                     }
                   >
                     <span className="block">{pad(cell.hour)}:00</span>
-                    {wind && (
+                    {wind && windKn !== undefined && (
                       <span
                         className={`mt-0.5 block text-[10px] font-semibold normal-case ${WIND_TONE_TEXT_CLASS[wind.tone]}`}
                       >
-                        {Math.round(windKn as number)}kn · {wind.shortLabel}
+                        {Math.round(windKn)}kn · {wind.shortLabel}
                       </span>
                     )}
                   </button>

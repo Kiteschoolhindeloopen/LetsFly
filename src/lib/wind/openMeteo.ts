@@ -3,13 +3,13 @@ import { WIND_LAT, WIND_LON } from "./config";
 interface OpenMeteoHourlyResponse {
   hourly: {
     time: string[];
-    wind_speed_10m: number[];
+    wind_speed_10m: (number | null)[];
   };
 }
 
 interface OpenMeteoCurrentResponse {
   current: {
-    wind_speed_10m: number;
+    wind_speed_10m: number | null;
   };
 }
 
@@ -31,7 +31,8 @@ export function fetchHourlyWindKn(): Promise<Map<string, number>> {
       .then((data) => {
         const map = new Map<string, number>();
         data.hourly.time.forEach((iso, i) => {
-          map.set(iso, data.hourly.wind_speed_10m[i]);
+          const kn = data.hourly.wind_speed_10m[i];
+          if (typeof kn === "number" && Number.isFinite(kn)) map.set(iso, kn);
         });
         return map;
       })
@@ -51,5 +52,11 @@ export function fetchCurrentWindKn(): Promise<number> {
       if (!res.ok) throw new Error(`Open-Meteo request failed: ${res.status}`);
       return res.json() as Promise<OpenMeteoCurrentResponse>;
     })
-    .then((data) => data.current.wind_speed_10m);
+    .then((data) => {
+      const kn = data.current.wind_speed_10m;
+      if (typeof kn !== "number" || !Number.isFinite(kn)) {
+        throw new Error("Open-Meteo returned no current wind value");
+      }
+      return kn;
+    });
 }
