@@ -15,6 +15,8 @@ import {
 import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import { DEMO_ADMIN_ID } from "@/lib/demoSession";
+import { getWindThresholds, saveWindThresholds } from "@/lib/wind/config";
+import type { WindThresholds } from "@/lib/wind/categorize";
 
 type Tab = "uebersicht" | "wind" | "anfragen" | "kundenanfragen" | "verwaltung";
 
@@ -70,6 +72,9 @@ export default function AdminPage() {
   const [newWindowEnd, setNewWindowEnd] = useState("");
   const [newWindowCategory, setNewWindowCategory] = useState<CourseCategory>("PRIVATE_HOURS");
   const [creatingWindow, setCreatingWindow] = useState(false);
+
+  const [windThresholds, setWindThresholds] = useState<WindThresholds>(() => getWindThresholds());
+  const [thresholdsSaved, setThresholdsSaved] = useState(false);
 
   const [windPreset, setWindPreset] = useState<(typeof WIND_PRESETS)[number]["key"] | null>(null);
   const [windDone, setWindDone] = useState(false);
@@ -174,6 +179,12 @@ export default function AdminPage() {
     setWindCancelledRows(windAffected);
     setWindDone(true);
     await load();
+  }
+
+  function handleSaveThresholds(e: React.FormEvent) {
+    e.preventDefault();
+    saveWindThresholds(windThresholds);
+    setThresholdsSaved(true);
   }
 
   async function handleCancelBooking(row: BookingRow) {
@@ -364,6 +375,41 @@ export default function AdminPage() {
 
       {tab === "wind" && (
         <div className="mt-6">
+          <form onSubmit={handleSaveThresholds} className="mb-5 rounded-xl border border-lf-border p-4">
+            <p className="text-sm font-semibold text-foreground">Windschwellen für „Gute Bedingungen“</p>
+            <div className="mt-3 flex gap-3">
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Ab wie vielen Knoten gut?
+                <input
+                  type="number"
+                  min={0}
+                  value={windThresholds.minGoodKn}
+                  onChange={(e) => {
+                    setThresholdsSaved(false);
+                    setWindThresholds((t) => ({ ...t, minGoodKn: Number(e.target.value) }));
+                  }}
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Bis wie vielen Knoten gut?
+                <input
+                  type="number"
+                  min={0}
+                  value={windThresholds.maxGoodKn}
+                  onChange={(e) => {
+                    setThresholdsSaved(false);
+                    setWindThresholds((t) => ({ ...t, maxGoodKn: Number(e.target.value) }));
+                  }}
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+            </div>
+            <button type="submit" className="mt-3 rounded-lg bg-lf-ocean px-4 py-2 text-xs font-bold text-white">
+              {thresholdsSaved ? "Gespeichert ✓" : "Speichern"}
+            </button>
+          </form>
+
           <p className="text-sm leading-relaxed text-lf-muted">
             Zeitraum wählen — betroffene Termine werden automatisch abgesagt und Kunden per Nachricht informiert.
           </p>
