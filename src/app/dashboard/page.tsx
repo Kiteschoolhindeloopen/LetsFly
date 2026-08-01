@@ -128,7 +128,18 @@ export default function DashboardPage() {
                 onClick={() => setNotifPanelOpen(true)}
                 className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-base"
               >
-                🔔
+                <svg
+                  className="h-[18px] w-[18px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
+                  <path d="M10 18a2 2 0 0 0 4 0" />
+                </svg>
                 {hasUnread && (
                   <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-lf-ocean-dark bg-lf-sand-dark" />
                 )}
