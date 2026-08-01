@@ -12,6 +12,9 @@ import {
 import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
 import { getCurrentCustomerId } from "@/lib/demoSession";
 import { WaiverConsent } from "@/components/WaiverConsent";
+import { fetchHourlyWindKn, windHourKey } from "@/lib/wind/openMeteo";
+import { getWindThresholds } from "@/lib/wind/config";
+import { categorizeWind, WIND_TONE_TEXT_CLASS } from "@/lib/wind/categorize";
 
 const HOURS = [10, 11, 12, 13, 14, 15, 16, 17];
 const WEEKDAY_LABELS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -51,6 +54,14 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
   const [confirmed, setConfirmed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [waiverAccepted, setWaiverAccepted] = useState(false);
+  const [windByHour, setWindByHour] = useState<Map<string, number> | null>(null);
+  const [windThresholds] = useState(() => getWindThresholds());
+
+  useEffect(() => {
+    fetchHourlyWindKn()
+      .then(setWindByHour)
+      .catch(() => setWindByHour(null));
+  }, []);
 
   const weekStart = new Date(startOfWeek(new Date()));
   weekStart.setDate(weekStart.getDate() + weekOffset * 7);
@@ -174,6 +185,8 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
             <div className="flex flex-wrap gap-2">
               {day.cells.map((cell) => {
                 const disabled = cell.isPast || cell.isBooked;
+                const windKn = windByHour?.get(windHourKey(cell.date));
+                const wind = windKn !== undefined ? categorizeWind(windKn, windThresholds) : null;
                 return (
                   <button
                     key={cell.iso}
@@ -185,7 +198,14 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                         : "rounded-lg border-2 border-emerald-400 bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-900 transition-colors hover:bg-emerald-200 active:bg-emerald-300 dark:border-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/70"
                     }
                   >
-                    {pad(cell.hour)}:00
+                    <span className="block">{pad(cell.hour)}:00</span>
+                    {wind && (
+                      <span
+                        className={`mt-0.5 block text-[10px] font-semibold normal-case ${WIND_TONE_TEXT_CLASS[wind.tone]}`}
+                      >
+                        {Math.round(windKn as number)}kn · {wind.shortLabel}
+                      </span>
+                    )}
                   </button>
                 );
               })}
