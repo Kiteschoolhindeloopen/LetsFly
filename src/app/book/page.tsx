@@ -182,7 +182,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                     className={
                       disabled
                         ? "rounded-lg bg-lf-border px-3 py-2 text-xs font-bold text-lf-muted"
-                        : "rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "rounded-lg border-2 border-emerald-400 bg-emerald-100 px-3 py-2 text-xs font-bold text-emerald-900 transition-colors hover:bg-emerald-200 active:bg-emerald-300 dark:border-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/70"
                     }
                   >
                     {pad(cell.hour)}:00
