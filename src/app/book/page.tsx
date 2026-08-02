@@ -10,7 +10,7 @@ import {
   type Slot,
 } from "@/lib/data/repository";
 import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
-import { getCurrentCustomerId } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
 import { WaiverConsent } from "@/components/WaiverConsent";
 import { fetchHourlyWindKn, windHourKey } from "@/lib/wind/openMeteo";
 import { getWindThresholds } from "@/lib/wind/config";
@@ -46,6 +46,7 @@ interface CampRow {
 
 function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; course: CourseOffering }) {
   const router = useRouter();
+  const user = useAuthUser();
   const [weekOffset, setWeekOffset] = useState(0);
   const [bookedIsoSet, setBookedIsoSet] = useState<Set<string>>(new Set());
   const [pkg, setPkg] = useState<HourPackagePurchase | null>(null);
@@ -72,7 +73,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
     const repo = getRepository();
     const [slots, packages] = await Promise.all([
       repo.getSlots({ from: weekStart.toISOString(), to: weekEnd.toISOString() }),
-      repo.getMyPackages(getCurrentCustomerId()),
+      repo.getMyPackages(user.id),
     ]);
     const taken = new Set(
       slots
@@ -127,7 +128,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
       const endsAt = new Date(selected.date);
       endsAt.setHours(endsAt.getHours() + 1);
       await getRepository().bookHourSlot({
-        customerId: getCurrentCustomerId(),
+        customerId: user.id,
         courseOfferingId,
         hourPackagePurchaseId: pkg?.id,
         startsAt: selected.date.toISOString(),
@@ -282,6 +283,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
 }
 
 function BookPageContent() {
+  const user = useAuthUser();
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category") as CourseCategory | null;
 
@@ -318,7 +320,7 @@ function BookPageContent() {
 
   async function handleBookCamp(slotId: string, waiverAccepted: boolean) {
     setCampBookingId(slotId);
-    await getRepository().createBooking({ customerId: getCurrentCustomerId(), slotId, waiverAccepted });
+    await getRepository().createBooking({ customerId: user.id, slotId, waiverAccepted });
     setCampConfirmedId(slotId);
     setCampBookingId(null);
     setCampConfirming(null);

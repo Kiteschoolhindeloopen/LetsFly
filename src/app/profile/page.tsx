@@ -11,7 +11,8 @@ import {
   type User,
 } from "@/lib/data/repository";
 import { formatDateTime, formatEuro } from "@/lib/format";
-import { getCurrentCustomerId } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
+import { signOut } from "@/lib/auth/session";
 
 interface HistoryRow {
   booking: Booking;
@@ -39,6 +40,7 @@ const UPSELL_PACKAGES = [
 
 export default function ProfilePage() {
   const router = useRouter();
+  const user = useAuthUser();
   const [customer, setCustomer] = useState<User | null>(null);
   const [pkg, setPkg] = useState<HourPackagePurchase | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
@@ -46,9 +48,9 @@ export default function ProfilePage() {
   async function load() {
     const repo = getRepository();
     const [customerData, packages, bookings, courses, slots] = await Promise.all([
-      repo.getCustomer(getCurrentCustomerId()),
-      repo.getMyPackages(getCurrentCustomerId()),
-      repo.getMyBookings(getCurrentCustomerId()),
+      repo.getCustomer(user.id),
+      repo.getMyPackages(user.id),
+      repo.getMyBookings(user.id),
       repo.getCourses(),
       repo.getSlots(),
     ]);
@@ -151,7 +153,10 @@ export default function ProfilePage() {
       <div className="mx-5 mt-6 border-t border-lf-border pt-2.5">
         <p className="px-1 py-3.5 text-[13.5px] font-semibold text-foreground">Zahlungsmethoden</p>
         <button
-          onClick={() => router.push("/")}
+          onClick={async () => {
+            await signOut();
+            router.push("/");
+          }}
           className="w-full px-1 py-3.5 text-left text-[13.5px] font-semibold text-red-600 dark:text-red-400"
         >
           Abmelden

@@ -14,7 +14,7 @@ import {
 } from "@/lib/data/repository";
 import { categoryLabels, formatDateTime, formatEuro } from "@/lib/format";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
-import { DEMO_ADMIN_ID } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
 import { getWindThresholds, saveWindThresholds } from "@/lib/wind/config";
 import type { WindThresholds } from "@/lib/wind/categorize";
 
@@ -60,6 +60,7 @@ function presetRange(key: (typeof WIND_PRESETS)[number]["key"]): [Date, Date] {
 }
 
 export default function AdminPage() {
+  const user = useAuthUser();
   const [tab, setTab] = useState<Tab>("uebersicht");
   const [rows, setRows] = useState<BookingRow[]>([]);
   const [courses, setCourses] = useState<CourseOffering[]>([]);
@@ -245,7 +246,7 @@ export default function AdminPage() {
       startsAt: new Date(newWindowStart).toISOString(),
       endsAt: new Date(newWindowEnd).toISOString(),
       courseCategory: newWindowCategory,
-      createdByAdminId: DEMO_ADMIN_ID,
+      createdByAdminId: user.id,
     });
     setNewWindowStart("");
     setNewWindowEnd("");

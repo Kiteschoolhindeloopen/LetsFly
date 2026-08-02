@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getRepository, type Video, type VideoCategory } from "@/lib/data/repository";
-import { getCurrentCustomerId } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
 
 const CATEGORIES: VideoCategory[] = [
   "Sicherheit & Material",
@@ -15,13 +15,14 @@ const CATEGORIES: VideoCategory[] = [
 ];
 
 export default function VideosPage() {
+  const user = useAuthUser();
   const [videos, setVideos] = useState<Video[] | null>(null);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
   const [activeCategory, setActiveCategory] = useState<VideoCategory | "Alle">("Alle");
 
   useEffect(() => {
     const repo = getRepository();
-    Promise.all([repo.getVideos(), repo.getWatchedVideoIds(getCurrentCustomerId())]).then(
+    Promise.all([repo.getVideos(), repo.getWatchedVideoIds(user.id)]).then(
       ([allVideos, watched]) => {
         setVideos(allVideos);
         setWatchedIds(new Set(watched));

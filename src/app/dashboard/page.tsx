@@ -12,7 +12,7 @@ import {
   type User,
 } from "@/lib/data/repository";
 import { formatDateTime, formatEuro } from "@/lib/format";
-import { getCurrentCustomerId } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import { fetchCurrentWindKn } from "@/lib/wind/openMeteo";
 import { getWindThresholds } from "@/lib/wind/config";
@@ -27,6 +27,7 @@ interface BookingRow {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const user = useAuthUser();
   const [customer, setCustomer] = useState<User | null>(null);
   const [pkg, setPkg] = useState<HourPackagePurchase | null>(null);
   const [upcoming, setUpcoming] = useState<BookingRow[]>([]);
@@ -41,12 +42,12 @@ export default function DashboardPage() {
   async function load() {
     const repo = getRepository();
     const [customerData, myPackages, myBookings, courses, slots, myNotifications] = await Promise.all([
-      repo.getCustomer(getCurrentCustomerId()),
-      repo.getMyPackages(getCurrentCustomerId()),
-      repo.getMyBookings(getCurrentCustomerId()),
+      repo.getCustomer(user.id),
+      repo.getMyPackages(user.id),
+      repo.getMyBookings(user.id),
       repo.getCourses(),
       repo.getSlots(),
-      repo.getNotifications(getCurrentCustomerId()),
+      repo.getNotifications(user.id),
     ]);
 
     const courseById = new Map(courses.map((c) => [c.id, c]));
@@ -105,7 +106,7 @@ export default function DashboardPage() {
   }
 
   async function handleMarkAllRead() {
-    await getRepository().markAllNotificationsRead(getCurrentCustomerId());
+    await getRepository().markAllNotificationsRead(user.id);
     await load();
   }
 

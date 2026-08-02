@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getRepository, type Video } from "@/lib/data/repository";
-import { getCurrentCustomerId } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
 
 export default function VideoDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const user = useAuthUser();
   const [video, setVideo] = useState<Video | null>(null);
   const [related, setRelated] = useState<Video[]>([]);
 
@@ -19,7 +20,7 @@ export default function VideoDetailPage() {
       setVideo(current);
       if (current) {
         setRelated(videos.filter((v) => v.category === current.category && v.id !== current.id).slice(0, 3));
-        repo.markVideoWatched(getCurrentCustomerId(), current.id);
+        repo.markVideoWatched(user.id, current.id);
       }
     });
   }, [params.id]);

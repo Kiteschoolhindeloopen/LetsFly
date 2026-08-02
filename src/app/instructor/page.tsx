@@ -9,7 +9,7 @@ import {
   type User,
 } from "@/lib/data/repository";
 import { formatDateTime } from "@/lib/format";
-import { getCurrentInstructorId } from "@/lib/demoSession";
+import { useAuthUser } from "@/lib/auth/AuthContext";
 
 type Tab = "verfuegbarkeit" | "schueler" | "anfragen";
 
@@ -20,6 +20,7 @@ interface StudentRow {
 }
 
 export default function InstructorPage() {
+  const user = useAuthUser();
   const [tab, setTab] = useState<Tab>("verfuegbarkeit");
   const [instructor, setInstructor] = useState<User | null>(null);
   const [courses, setCourses] = useState<CourseOffering[]>([]);
@@ -36,12 +37,12 @@ export default function InstructorPage() {
   async function load() {
     const repo = getRepository();
     const [me, allCourses, allSlots, allBookings, mySlots, myRequests] = await Promise.all([
-      repo.getCustomer(getCurrentInstructorId()),
+      repo.getCustomer(user.id),
       repo.getCourses(),
       repo.getSlots(),
       repo.getAllBookings(),
-      repo.getMySlots(getCurrentInstructorId()),
-      repo.getMyRequests(getCurrentInstructorId()),
+      repo.getMySlots(user.id),
+      repo.getMyRequests(user.id),
     ]);
 
     setInstructor(me);
@@ -70,7 +71,7 @@ export default function InstructorPage() {
 
   async function handleClaim(slotId: string) {
     setClaimingId(slotId);
-    await getRepository().claimSlot(slotId, getCurrentInstructorId());
+    await getRepository().claimSlot(slotId, user.id);
     await load();
     setClaimingId(null);
   }
@@ -80,7 +81,7 @@ export default function InstructorPage() {
     if (!reqCourseId || !reqStart || !reqEnd) return;
     setReqSubmitting(true);
     await getRepository().createInstructorRequest({
-      instructorId: getCurrentInstructorId(),
+      instructorId: user.id,
       courseOfferingId: reqCourseId,
       requestedStartsAt: reqStart,
       requestedEndsAt: reqEnd,
