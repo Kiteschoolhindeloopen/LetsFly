@@ -23,6 +23,7 @@ export default function VideoDetailPage() {
         repo.markVideoWatched(user.id, current.id);
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   if (!video) {

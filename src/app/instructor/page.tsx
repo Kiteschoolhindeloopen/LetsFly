@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   getRepository,
   type CourseOffering,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/data/repository";
 import { formatDateTime } from "@/lib/format";
 import { useAuthUser } from "@/lib/auth/AuthContext";
+import { signOut } from "@/lib/auth/session";
 
 type Tab = "verfuegbarkeit" | "schueler" | "anfragen";
 
@@ -20,6 +22,7 @@ interface StudentRow {
 }
 
 export default function InstructorPage() {
+  const router = useRouter();
   const user = useAuthUser();
   const [tab, setTab] = useState<Tab>("verfuegbarkeit");
   const [instructor, setInstructor] = useState<User | null>(null);
@@ -96,10 +99,23 @@ export default function InstructorPage() {
 
   return (
     <main className="flex-1 px-5 py-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-lf-muted">Lehrer-Bereich</p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-        {instructor?.name ?? "…"}
-      </h1>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-lf-muted">Lehrer-Bereich</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+            {instructor?.name ?? "…"}
+          </h1>
+        </div>
+        <button
+          onClick={async () => {
+            await signOut();
+            router.push("/");
+          }}
+          className="shrink-0 rounded-full border border-lf-border px-3 py-1.5 text-xs font-semibold text-foreground"
+        >
+          Abmelden
+        </button>
+      </div>
 
       <div className="mt-6 flex gap-2">
         {(

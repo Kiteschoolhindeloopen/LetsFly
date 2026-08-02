@@ -1,3 +1,11 @@
+# Vorher (einmalig)
+
+1. `.env.local` aus `.env.example` erstellen und die beiden Supabase-Keys eintragen.
+2. `supabase/migrations/0001_init.sql` im Supabase SQL Editor ausführen (Schema + RLS).
+3. `supabase/migrations/0002_seed.sql` im Supabase SQL Editor ausführen (Kurse + Videos).
+
+Danach erst mit den folgenden Schritten weitermachen.
+
 # Accounts anlegen (manuell, einmalig)
 
 Für jeden der drei Test-Accounts:

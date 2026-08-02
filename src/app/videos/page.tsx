@@ -28,6 +28,7 @@ export default function VideosPage() {
         setWatchedIds(new Set(watched));
       }
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const visible = videos?.filter((v) => activeCategory === "Alle" || v.category === activeCategory);

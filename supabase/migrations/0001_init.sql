@@ -180,8 +180,19 @@ alter table public.package_requests enable row level security;
 -- profiles: own row, or admin sees/writes all
 create policy "profiles_select_own_or_admin" on public.profiles
   for select using (id = auth.uid() or public.is_admin(auth.uid()));
-create policy "profiles_update_own_or_admin" on public.profiles
-  for update using (id = auth.uid() or public.is_admin(auth.uid()));
+create policy "profiles_select_related" on public.profiles
+  for select using (
+    id = auth.uid()
+    or public.is_admin(auth.uid())
+    or exists (
+      select 1 from public.bookings b
+      join public.slots s on s.id = b.slot_id
+      where (b.customer_id = auth.uid() and s.instructor_id = profiles.id)
+         or (s.instructor_id = auth.uid() and b.customer_id = profiles.id)
+    )
+  );
+create policy "profiles_update_admin_only" on public.profiles
+  for update using (public.is_admin(auth.uid()));
 
 -- course_offerings: any authenticated user reads, only admin writes
 create policy "courses_select_authenticated" on public.course_offerings
@@ -221,6 +232,7 @@ create policy "slots_update_own_instructor_or_admin" on public.slots
   with check (
     instructor_id = auth.uid()
     or public.is_admin(auth.uid())
+    or instructor_id is not distinct from (select s.instructor_id from public.slots s where s.id = slots.id)
   );
 
 -- hour_package_purchases: own rows, admin all
@@ -234,6 +246,13 @@ create policy "packages_update_own_or_admin" on public.hour_package_purchases
 -- bookings: own rows, admin all
 create policy "bookings_select_own_or_admin" on public.bookings
   for select using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "bookings_select_instructor" on public.bookings
+  for select using (
+    exists (
+      select 1 from public.slots s
+      where s.id = bookings.slot_id and s.instructor_id = auth.uid()
+    )
+  );
 create policy "bookings_insert_own" on public.bookings
   for insert with check (customer_id = auth.uid());
 create policy "bookings_update_own_or_admin" on public.bookings
@@ -244,6 +263,9 @@ create policy "watched_select_own" on public.watched_videos
   for select using (customer_id = auth.uid());
 create policy "watched_insert_own" on public.watched_videos
   for insert with check (customer_id = auth.uid());
+create policy "watched_update_own" on public.watched_videos
+  for update using (customer_id = auth.uid())
+  with check (customer_id = auth.uid());
 
 -- notifications: own rows, admin all (admin creates notifications for customers)
 create policy "notifications_select_own_or_admin" on public.notifications
