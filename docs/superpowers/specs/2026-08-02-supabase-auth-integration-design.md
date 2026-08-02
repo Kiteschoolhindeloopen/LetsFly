@@ -109,8 +109,13 @@ RLS aktiviert auf allen Tabellen. Policies:
 | `instructor_slot_requests` | `instructor_id = auth.uid()`; Admin: alle | Lehrer: eigene erstellen; Admin: alle entscheiden |
 | `package_requests` | `customer_id = auth.uid()`; Admin: alle | Kunde: eigene erstellen; Admin: alle entscheiden |
 
-Admin-Erkennung in Policies über Subquery auf `profiles.role = 'ADMIN'` für
-`auth.uid()`.
+Admin-Erkennung über eine `SECURITY DEFINER`-Hilfsfunktion `is_admin(uid uuid)
+returns boolean`, die `profiles` **unter Umgehung von RLS** abfragt. Direkte
+Subqueries auf `profiles.role = 'ADMIN'` innerhalb einer Policy auf
+`profiles` selbst würden eine RLS-Endlosrekursion auslösen (die Policy prüft
+die Rolle, indem sie `profiles` liest, was wiederum dieselbe Policy
+auslöst) — deshalb zwingend über die `SECURITY DEFINER`-Funktion, auch für
+alle anderen Tabellen (Konsistenz).
 
 ### 4. Seed-Daten (`supabase/migrations/0002_seed.sql`)
 
@@ -141,9 +146,15 @@ Kein Self-Signup. Ablauf pro Account (Kunde, Lehrer, Admin):
 - `src/lib/data/supabase/supabaseRepository.ts`: implementiert das
   bestehende `Repository`-Interface vollständig, gleiche Methodensignaturen
   wie `mockRepository`.
-- `getRepository()` in `repository.ts`: liefert `supabaseRepository`, wenn
-  `NEXT_PUBLIC_SUPABASE_URL` gesetzt ist, sonst Fallback auf
-  `mockRepository` (z.B. für Offline-Arbeit ohne Supabase-Zugriff).
+- `getRepository()` in `repository.ts`: liefert ab jetzt immer
+  `supabaseRepository` — kein Mock-Fallback mehr. Ein halber Fallback (Daten
+  gemockt, aber Auth zwingend über Supabase, siehe Abschnitt 7) wäre ein
+  kaputter Zustand: ohne Supabase-Zugriff könnte sich niemand einloggen,
+  egal ob die Daten gemockt sind. `mockRepository` bleibt im Code (für
+  Tests/Referenz), wird aber nicht mehr automatisch verwendet. Die
+  "ohne Internet/Account startbar"-Vorgabe aus AGENTS.md galt laut dortiger
+  Formulierung ausdrücklich nur, bis echte Supabase-Credentials vorliegen —
+  das ist jetzt der Fall.
 
 ### 7. Auth-Flow
 
@@ -177,11 +188,11 @@ Kein Self-Signup. Ablauf pro Account (Kunde, Lehrer, Admin):
   vorher bei unbekannter E-Mail — entfällt, da kein Self-Signup mehr
   möglich ist; stattdessen klare Fehlermeldung "E-Mail oder Passwort
   falsch").
-- Kein `NEXT_PUBLIC_SUPABASE_URL` gesetzt: nur der Datenzugriff
-  (`getRepository()`) fällt auf `mockRepository` zurück — Auth läuft immer
-  über `session.ts`/Supabase, da `demoSession.ts` komplett entfernt wird.
-  Ohne gesetzte Supabase-Keys schlägt der Login dann mit einer allgemeinen
-  Fehlermeldung fehl (kein Offline-Login-Fallback, nur Daten-Fallback).
+- Kein `NEXT_PUBLIC_SUPABASE_URL` gesetzt (z.B. `.env.local` fehlt bei einem
+  frischen Checkout): App zeigt beim Start einen klaren Fehler statt eines
+  stillen Absturzes — `client.ts` wirft beim Fehlen der Env-Variablen sofort
+  eine Exception mit verständlicher Meldung ("Supabase-Konfiguration fehlt,
+  siehe `.env.example`"), statt dass Login/Daten unklar fehlschlagen.
 
 ## Testing
 
