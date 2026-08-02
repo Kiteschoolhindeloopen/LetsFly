@@ -217,6 +217,10 @@ create policy "slots_update_own_instructor_or_admin" on public.slots
     instructor_id = auth.uid()
     or instructor_id is null
     or public.is_admin(auth.uid())
+  )
+  with check (
+    instructor_id = auth.uid()
+    or public.is_admin(auth.uid())
   );
 
 -- hour_package_purchases: own rows, admin all
