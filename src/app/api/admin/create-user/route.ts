@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     const callerClient = createClient(url, anonKey);
     const { data: callerData, error: callerError } = await callerClient.auth.getUser(token);
     if (callerError || !callerData.user) {
+      console.error("create-user: getUser failed", callerError);
       return NextResponse.json({ error: "Nicht angemeldet." }, { status: 403 });
     }
 
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
       .eq("id", callerData.user.id)
       .maybeSingle();
     if (callerProfileError || callerProfile?.role !== "ADMIN") {
+      console.error("create-user: role check failed", {
+        callerId: callerData.user.id,
+        callerEmail: callerData.user.email,
+        callerProfile,
+        callerProfileError,
+      });
       return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
     }
 
