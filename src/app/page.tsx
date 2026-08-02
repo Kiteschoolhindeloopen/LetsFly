@@ -2,29 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getRepository } from "@/lib/data/repository";
-import { setLoggedInUser } from "@/lib/demoSession";
-
-const ROLE_ROUTES = {
-  CUSTOMER: "/dashboard",
-  INSTRUCTOR: "/instructor",
-  ADMIN: "/admin",
-} as const;
+import { supabase } from "@/lib/supabase/client";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { ROLE_ROUTES } from "@/lib/auth/roleRoutes";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    const user = await getRepository().getUserByEmail(email);
-    if (!user) {
-      // Unbekannte E-Mail: noch kein Konto -> Registrierung.
-      router.push("/onboarding");
+    setError(null);
+    setSubmitting(true);
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      setError("E-Mail oder Passwort falsch.");
+      setSubmitting(false);
       return;
     }
-    setLoggedInUser(user);
-    router.push(ROLE_ROUTES[user.role]);
+
+    const profile = await getCurrentProfile();
+    setSubmitting(false);
+    if (!profile) {
+      setError("Kein Profil für diesen Account gefunden. Bitte an die Schule wenden.");
+      return;
+    }
+    router.push(ROLE_ROUTES[profile.role]);
   }
 
   return (
@@ -49,17 +56,28 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="lisa.meyer@email.de"
+            type="email"
             className="mb-3.5 w-full rounded-xl border border-lf-border bg-background px-4 py-3.5 text-sm outline-none"
           />
-          <button type="submit" className="w-full rounded-xl bg-lf-ocean py-3.5 text-sm font-bold text-white">
-            Anmelden
+          <label className="mb-1.5 block text-xs font-semibold text-foreground">Passwort</label>
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            type="password"
+            className="mb-3.5 w-full rounded-xl border border-lf-border bg-background px-4 py-3.5 text-sm outline-none"
+          />
+          {error && <p className="mb-3.5 text-xs font-semibold text-red-600 dark:text-red-400">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-xl bg-lf-ocean py-3.5 text-sm font-bold text-white disabled:opacity-60"
+          >
+            {submitting ? "Anmelden…" : "Anmelden"}
           </button>
         </form>
         <p className="mt-4.5 text-center text-xs text-lf-muted">
-          Noch kein Konto?{" "}
-          <button type="button" onClick={() => router.push("/onboarding")} className="text-lf-ocean">
-            Jetzt registrieren
-          </button>
+          Noch kein Konto? Wende dich an die Kiteschule.
         </p>
       </div>
     </div>
