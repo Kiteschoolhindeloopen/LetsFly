@@ -19,6 +19,7 @@ import { useAuthUser } from "@/lib/auth/AuthContext";
 import { signOut } from "@/lib/auth/session";
 import { getWindThresholds, saveWindThresholds } from "@/lib/wind/config";
 import type { WindThresholds } from "@/lib/wind/categorize";
+import { supabase } from "@/lib/supabase/client";
 
 type Tab = "uebersicht" | "wind" | "anfragen" | "kundenanfragen" | "verwaltung";
 
@@ -100,6 +101,14 @@ export default function AdminPage() {
   const [courseDraftPriceEuro, setCourseDraftPriceEuro] = useState("");
   const [courseDraftActive, setCourseDraftActive] = useState(true);
   const [savingCourse, setSavingCourse] = useState(false);
+
+  const [newAccountEmail, setNewAccountEmail] = useState("");
+  const [newAccountPassword, setNewAccountPassword] = useState("");
+  const [newAccountName, setNewAccountName] = useState("");
+  const [newAccountRole, setNewAccountRole] = useState<"CUSTOMER" | "INSTRUCTOR">("CUSTOMER");
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [createAccountError, setCreateAccountError] = useState<string | null>(null);
+  const [createdAccountInfo, setCreatedAccountInfo] = useState<{ email: string; password: string } | null>(null);
 
   async function load() {
     const repo = getRepository();
@@ -255,6 +264,45 @@ export default function AdminPage() {
     setNewWindowEnd("");
     await load();
     setCreatingWindow(false);
+  }
+
+  async function handleCreateAccount(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateAccountError(null);
+    setCreatedAccountInfo(null);
+    if (!newAccountEmail.trim() || !newAccountName.trim() || newAccountPassword.length < 8) {
+      setCreateAccountError("Bitte alle Felder ausfüllen (Passwort mind. 8 Zeichen).");
+      return;
+    }
+    setCreatingAccount(true);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const res = await fetch("/api/admin/create-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({
+        email: newAccountEmail.trim(),
+        password: newAccountPassword,
+        name: newAccountName.trim(),
+        role: newAccountRole,
+      }),
+    });
+    const result = await res.json();
+    setCreatingAccount(false);
+    if (!res.ok) {
+      setCreateAccountError(result.error ?? "Account konnte nicht angelegt werden.");
+      return;
+    }
+    setCreatedAccountInfo({ email: newAccountEmail.trim(), password: newAccountPassword });
+    setNewAccountEmail("");
+    setNewAccountPassword("");
+    setNewAccountName("");
+    setNewAccountRole("CUSTOMER");
+    await load();
   }
 
   async function handleProposeDate(requestId: string) {
@@ -711,6 +759,85 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+
+          <h2 className="mt-8 text-sm font-semibold text-foreground">Account anlegen</h2>
+          <form
+            onSubmit={handleCreateAccount}
+            className="mt-2 flex flex-col gap-3 rounded-2xl border border-lf-border bg-lf-card p-5"
+          >
+            <input
+              type="email"
+              value={newAccountEmail}
+              onChange={(e) => setNewAccountEmail(e.target.value)}
+              placeholder="E-Mail-Adresse"
+              required
+              className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={newAccountPassword}
+              onChange={(e) => setNewAccountPassword(e.target.value)}
+              placeholder="Passwort (mind. 8 Zeichen)"
+              required
+              className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={newAccountName}
+              onChange={(e) => setNewAccountName(e.target.value)}
+              placeholder="Name"
+              required
+              className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+            />
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <input
+                  type="radio"
+                  name="newAccountRole"
+                  checked={newAccountRole === "CUSTOMER"}
+                  onChange={() => setNewAccountRole("CUSTOMER")}
+                />
+                Kunde
+              </label>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <input
+                  type="radio"
+                  name="newAccountRole"
+                  checked={newAccountRole === "INSTRUCTOR"}
+                  onChange={() => setNewAccountRole("INSTRUCTOR")}
+                />
+                Lehrer
+              </label>
+            </div>
+            {createAccountError && (
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400">{createAccountError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={creatingAccount}
+              className="self-start rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {creatingAccount ? "Erstelle…" : "Account anlegen"}
+            </button>
+          </form>
+
+          {createdAccountInfo && (
+            <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950">
+              <p className="font-semibold text-emerald-800 dark:text-emerald-200">Account angelegt!</p>
+              <p className="mt-1 text-emerald-700 dark:text-emerald-300">
+                Login-Link:{" "}
+                <span className="select-all font-mono">
+                  {typeof window !== "undefined" ? window.location.origin + "/" : ""}
+                </span>
+              </p>
+              <p className="text-emerald-700 dark:text-emerald-300">
+                E-Mail: <span className="select-all font-mono">{createdAccountInfo.email}</span>
+              </p>
+              <p className="text-emerald-700 dark:text-emerald-300">
+                Passwort: <span className="select-all font-mono">{createdAccountInfo.password}</span>
+              </p>
+            </div>
+          )}
 
           <h2 className="mt-8 text-sm font-semibold text-foreground">Verfügbarkeit für Lehrer freigeben</h2>
           <p className="mt-1 text-sm text-lf-muted">
