@@ -39,14 +39,18 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   }
 
   const newBookedCount = slot.booked_count + seats;
-  const { error: updateSlotError } = await supabase
+  const { data: updatedSlotRows, error: updateSlotError } = await supabase
     .from("slots")
     .update({
       booked_count: newBookedCount,
       status: newBookedCount >= slot.capacity ? "BOOKED" : "OPEN",
     })
-    .eq("id", slot.id);
+    .eq("id", slot.id)
+    .select();
   if (updateSlotError) throw updateSlotError;
+  if (!updatedSlotRows || updatedSlotRows.length === 0) {
+    throw new Error("Slot konnte nicht aktualisiert werden (Berechtigung verweigert oder Slot nicht gefunden).");
+  }
 
   const bookingId = newId("booking");
   const nowIso = new Date().toISOString();

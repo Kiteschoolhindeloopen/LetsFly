@@ -225,9 +225,7 @@ create policy "slots_insert_admin_or_customer" on public.slots
   for insert with check (auth.uid() is not null);
 create policy "slots_update_own_instructor_or_admin" on public.slots
   for update using (
-    instructor_id = auth.uid()
-    or instructor_id is null
-    or public.is_admin(auth.uid())
+    auth.uid() is not null
   )
   with check (
     instructor_id = auth.uid()
