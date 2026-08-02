@@ -149,3 +149,118 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- RLS: SECURITY DEFINER helper avoids infinite recursion when a policy on
+-- `profiles` itself needs to check whether the caller is an admin — a plain
+-- subquery on profiles from within a profiles policy would recurse into the
+-- same policy check.
+create or replace function public.is_admin(uid uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles where id = uid and role = 'ADMIN'
+  );
+$$;
+
+alter table public.profiles enable row level security;
+alter table public.course_offerings enable row level security;
+alter table public.availability_windows enable row level security;
+alter table public.slots enable row level security;
+alter table public.hour_package_purchases enable row level security;
+alter table public.bookings enable row level security;
+alter table public.videos enable row level security;
+alter table public.watched_videos enable row level security;
+alter table public.notifications enable row level security;
+alter table public.instructor_slot_requests enable row level security;
+alter table public.package_requests enable row level security;
+
+-- profiles: own row, or admin sees/writes all
+create policy "profiles_select_own_or_admin" on public.profiles
+  for select using (id = auth.uid() or public.is_admin(auth.uid()));
+create policy "profiles_update_own_or_admin" on public.profiles
+  for update using (id = auth.uid() or public.is_admin(auth.uid()));
+
+-- course_offerings: any authenticated user reads, only admin writes
+create policy "courses_select_authenticated" on public.course_offerings
+  for select using (auth.uid() is not null);
+create policy "courses_write_admin" on public.course_offerings
+  for insert with check (public.is_admin(auth.uid()));
+create policy "courses_update_admin" on public.course_offerings
+  for update using (public.is_admin(auth.uid()));
+create policy "courses_delete_admin" on public.course_offerings
+  for delete using (public.is_admin(auth.uid()));
+
+-- availability_windows: any authenticated user reads, only admin writes
+create policy "windows_select_authenticated" on public.availability_windows
+  for select using (auth.uid() is not null);
+create policy "windows_write_admin" on public.availability_windows
+  for insert with check (public.is_admin(auth.uid()));
+create policy "windows_update_admin" on public.availability_windows
+  for update using (public.is_admin(auth.uid()));
+
+-- videos: any authenticated user reads, only admin writes
+create policy "videos_select_authenticated" on public.videos
+  for select using (auth.uid() is not null);
+create policy "videos_write_admin" on public.videos
+  for insert with check (public.is_admin(auth.uid()));
+
+-- slots: any authenticated user reads; instructor claims/updates own; admin all
+create policy "slots_select_authenticated" on public.slots
+  for select using (auth.uid() is not null);
+create policy "slots_insert_admin_or_customer" on public.slots
+  for insert with check (auth.uid() is not null);
+create policy "slots_update_own_instructor_or_admin" on public.slots
+  for update using (
+    instructor_id = auth.uid()
+    or instructor_id is null
+    or public.is_admin(auth.uid())
+  );
+
+-- hour_package_purchases: own rows, admin all
+create policy "packages_select_own_or_admin" on public.hour_package_purchases
+  for select using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "packages_insert_own_or_admin" on public.hour_package_purchases
+  for insert with check (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "packages_update_own_or_admin" on public.hour_package_purchases
+  for update using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+
+-- bookings: own rows, admin all
+create policy "bookings_select_own_or_admin" on public.bookings
+  for select using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "bookings_insert_own" on public.bookings
+  for insert with check (customer_id = auth.uid());
+create policy "bookings_update_own_or_admin" on public.bookings
+  for update using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+
+-- watched_videos: own rows only
+create policy "watched_select_own" on public.watched_videos
+  for select using (customer_id = auth.uid());
+create policy "watched_insert_own" on public.watched_videos
+  for insert with check (customer_id = auth.uid());
+
+-- notifications: own rows, admin all (admin creates notifications for customers)
+create policy "notifications_select_own_or_admin" on public.notifications
+  for select using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "notifications_insert_own_or_admin" on public.notifications
+  for insert with check (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "notifications_update_own_or_admin" on public.notifications
+  for update using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+
+-- instructor_slot_requests: own rows for instructor, admin all
+create policy "instr_requests_select_own_or_admin" on public.instructor_slot_requests
+  for select using (instructor_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "instr_requests_insert_own" on public.instructor_slot_requests
+  for insert with check (instructor_id = auth.uid());
+create policy "instr_requests_update_admin" on public.instructor_slot_requests
+  for update using (public.is_admin(auth.uid()));
+
+-- package_requests: own rows for customer, admin all
+create policy "pkg_requests_select_own_or_admin" on public.package_requests
+  for select using (customer_id = auth.uid() or public.is_admin(auth.uid()));
+create policy "pkg_requests_insert_own" on public.package_requests
+  for insert with check (customer_id = auth.uid());
+create policy "pkg_requests_update_own_or_admin" on public.package_requests
+  for update using (customer_id = auth.uid() or public.is_admin(auth.uid()));
