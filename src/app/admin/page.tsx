@@ -275,34 +275,39 @@ export default function AdminPage() {
       return;
     }
     setCreatingAccount(true);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const res = await fetch("/api/admin/create-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session?.access_token ?? ""}`,
-      },
-      body: JSON.stringify({
-        email: newAccountEmail.trim(),
-        password: newAccountPassword,
-        name: newAccountName.trim(),
-        role: newAccountRole,
-      }),
-    });
-    const result = await res.json();
-    setCreatingAccount(false);
-    if (!res.ok) {
-      setCreateAccountError(result.error ?? "Account konnte nicht angelegt werden.");
-      return;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch("/api/admin/create-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({
+          email: newAccountEmail.trim(),
+          password: newAccountPassword,
+          name: newAccountName.trim(),
+          role: newAccountRole,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setCreateAccountError(result.error ?? "Account konnte nicht angelegt werden.");
+        return;
+      }
+      setCreatedAccountInfo({ email: newAccountEmail.trim(), password: newAccountPassword });
+      setNewAccountEmail("");
+      setNewAccountPassword("");
+      setNewAccountName("");
+      setNewAccountRole("CUSTOMER");
+      await load();
+    } catch {
+      setCreateAccountError("Account konnte nicht angelegt werden (Verbindungsfehler).");
+    } finally {
+      setCreatingAccount(false);
     }
-    setCreatedAccountInfo({ email: newAccountEmail.trim(), password: newAccountPassword });
-    setNewAccountEmail("");
-    setNewAccountPassword("");
-    setNewAccountName("");
-    setNewAccountRole("CUSTOMER");
-    await load();
   }
 
   async function handleProposeDate(requestId: string) {
@@ -347,7 +352,10 @@ export default function AdminPage() {
         ).map(([value, label]) => (
           <button
             key={value}
-            onClick={() => setTab(value)}
+            onClick={() => {
+              setTab(value);
+              setCreatedAccountInfo(null);
+            }}
             className={
               tab === value
                 ? "rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white"

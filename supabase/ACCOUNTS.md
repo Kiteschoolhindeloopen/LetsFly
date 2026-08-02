@@ -26,6 +26,8 @@ update public.profiles set role = 'INSTRUCTOR', name = 'Merlin Muhra', is_iko_in
 
 Ein Kunden-Account (z.B. `lisa.meyer@email.de`) braucht keinen Rollen-Update — er bleibt automatisch `CUSTOMER`.
 
+Falls das Anlegen eines Accounts im Admin-Bereich mit „Rolle konnte aber nicht gesetzt werden" fehlschlägt: Der Auth-User wurde bereits angelegt — die Rolle über obiges SQL-Snippet nachtragen statt erneut anzulegen (ein erneuter Versuch scheitert mit „bereits vergeben").
+
 ## Demo-Daten für diese drei Accounts (optional, SQL Editor, danach ausführen)
 
 Ersetzt `<ADMIN_UUID>`, `<INSTRUCTOR_UUID>`, `<CUSTOMER_UUID>` mit den echten UUIDs aus
