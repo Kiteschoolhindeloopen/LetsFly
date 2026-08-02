@@ -19,7 +19,7 @@ export function AuthGuard({ role, children }: { role: Role; children: React.Reac
         router.replace("/");
         return;
       }
-      if (profile.role !== role) {
+      if (profile.role !== role && profile.role !== "ADMIN") {
         router.replace(ROLE_ROUTES[profile.role]);
         return;
       }
