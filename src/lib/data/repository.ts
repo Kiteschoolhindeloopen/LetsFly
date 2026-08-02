@@ -13,7 +13,7 @@ import type {
   User,
   Video,
 } from "./types";
-import { mockRepository } from "./mock/mockRepository";
+import { supabaseRepository } from "./supabase/supabaseRepository";
 
 export interface SlotFilter {
   category?: CourseCategory;
@@ -122,7 +122,7 @@ export interface Repository {
 }
 
 export function getRepository(): Repository {
-  return mockRepository;
+  return supabaseRepository;
 }
 
 export * from "./types";
