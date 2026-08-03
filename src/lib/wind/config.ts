@@ -1,7 +1,10 @@
 import type { WindThresholds } from "./categorize";
 
-export const WIND_LAT = 52.9847;
-export const WIND_LON = 5.4372;
+export const WIND_LAT = 52.9666;
+export const WIND_LON = 5.4121;
+
+// Kompassrichtung, in die man vom Spot (Workum, IJsselmeer-Ostufer) aufs offene Wasser blickt.
+export const BEACH_FACING_DEG = 270;
 
 const THRESHOLDS_KEY = "letsfly_wind_thresholds";
 const DEFAULT_THRESHOLDS: WindThresholds = { minGoodKn: 12, maxGoodKn: 25 };

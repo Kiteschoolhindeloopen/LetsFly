@@ -14,9 +14,9 @@ import {
 import { formatDateTime, formatEuro } from "@/lib/format";
 import { useAuthUser } from "@/lib/auth/AuthContext";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
-import { fetchCurrentWindKn } from "@/lib/wind/openMeteo";
-import { getWindThresholds } from "@/lib/wind/config";
-import { categorizeWind, WIND_TONE_TEXT_CLASS } from "@/lib/wind/categorize";
+import { fetchCurrentWind } from "@/lib/wind/openMeteo";
+import { getWindThresholds, BEACH_FACING_DEG } from "@/lib/wind/config";
+import { categorizeWind, categorizeWindDirection, WIND_TONE_TEXT_CLASS, SHORE_DIRECTION_TEXT_CLASS } from "@/lib/wind/categorize";
 
 interface BookingRow {
   booking: Booking;
@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [windBannerActive, setWindBannerActive] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [currentWindKn, setCurrentWindKn] = useState<number | null>(null);
+  const [currentWindDirectionDeg, setCurrentWindDirectionDeg] = useState<number | null>(null);
   const [windThresholds] = useState(() => getWindThresholds());
 
   async function load() {
@@ -93,9 +94,15 @@ export default function DashboardPage() {
   useLiveRefresh(load);
 
   useEffect(() => {
-    fetchCurrentWindKn()
-      .then(setCurrentWindKn)
-      .catch(() => setCurrentWindKn(null));
+    fetchCurrentWind()
+      .then((wind) => {
+        setCurrentWindKn(wind.speedKn);
+        setCurrentWindDirectionDeg(wind.directionDeg);
+      })
+      .catch(() => {
+        setCurrentWindKn(null);
+        setCurrentWindDirectionDeg(null);
+      });
   }, []);
 
   async function handleCancel(bookingId: string) {
@@ -119,6 +126,8 @@ export default function DashboardPage() {
   const hasUnread = notifications.some((n) => n.unread);
   const showWindBanner = !windBannerDismissed && windBannerActive;
   const currentWind = currentWindKn !== null ? categorizeWind(currentWindKn, windThresholds) : null;
+  const currentWindDirection =
+    currentWindDirectionDeg !== null ? categorizeWindDirection(currentWindDirectionDeg, BEACH_FACING_DEG) : null;
 
   return (
     <div className="lf-scroll flex flex-1 flex-col overflow-y-auto pb-6">
@@ -188,6 +197,11 @@ export default function DashboardPage() {
             <span className={`text-sm font-bold ${WIND_TONE_TEXT_CLASS[currentWind.tone]}`}>
               {currentWind.label}
             </span>
+            {currentWindDirection && (
+              <span className={`text-sm font-bold ${SHORE_DIRECTION_TEXT_CLASS[currentWindDirection.direction]}`}>
+                · {currentWindDirection.label}
+              </span>
+            )}
           </div>
           <p className="mt-1 text-xs text-lf-muted">Workum, IJsselmeer</p>
         </div>

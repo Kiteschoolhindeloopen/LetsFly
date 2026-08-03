@@ -10,7 +10,13 @@ interface OpenMeteoHourlyResponse {
 interface OpenMeteoCurrentResponse {
   current: {
     wind_speed_10m: number | null;
+    wind_direction_10m: number | null;
   };
+}
+
+export interface CurrentWind {
+  speedKn: number;
+  directionDeg: number | null;
 }
 
 let hourlyCache: Promise<Map<string, number>> | null = null;
@@ -44,9 +50,9 @@ export function fetchHourlyWindKn(): Promise<Map<string, number>> {
   return hourlyCache;
 }
 
-export function fetchCurrentWindKn(): Promise<number> {
+export function fetchCurrentWind(): Promise<CurrentWind> {
   return fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${WIND_LAT}&longitude=${WIND_LON}&current=wind_speed_10m&wind_speed_unit=kn&timezone=UTC`
+    `https://api.open-meteo.com/v1/forecast?latitude=${WIND_LAT}&longitude=${WIND_LON}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn&timezone=UTC`
   )
     .then((res) => {
       if (!res.ok) throw new Error(`Open-Meteo request failed: ${res.status}`);
@@ -57,6 +63,10 @@ export function fetchCurrentWindKn(): Promise<number> {
       if (typeof kn !== "number" || !Number.isFinite(kn)) {
         throw new Error("Open-Meteo returned no current wind value");
       }
-      return kn;
+      const directionDeg = data.current.wind_direction_10m;
+      return {
+        speedKn: kn,
+        directionDeg: typeof directionDeg === "number" && Number.isFinite(directionDeg) ? directionDeg : null,
+      };
     });
 }
