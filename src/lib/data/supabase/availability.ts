@@ -94,7 +94,7 @@ export async function createWindow(input: CreateWindowInput): Promise<Availabili
       };
     }
     const slotEnd = new Date(window.startsAt);
-    slotEnd.setHours(slotEnd.getHours() + 2);
+    slotEnd.setHours(slotEnd.getHours() + 1);
     return {
       id: newId("slot"),
       course_offering_id: course.id,
