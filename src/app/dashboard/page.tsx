@@ -15,8 +15,14 @@ import { formatDateTime, formatEuro } from "@/lib/format";
 import { useAuthUser } from "@/lib/auth/AuthContext";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import { fetchCurrentWind } from "@/lib/wind/openMeteo";
-import { getWindThresholds, BEACH_FACING_DEG } from "@/lib/wind/config";
-import { categorizeWind, categorizeWindDirection, WIND_TONE_TEXT_CLASS, SHORE_DIRECTION_TEXT_CLASS } from "@/lib/wind/categorize";
+import { getWindThresholds, BEACH_FACING_DEG, GUST_FACTOR_THRESHOLD } from "@/lib/wind/config";
+import {
+  categorizeWind,
+  categorizeWindDirection,
+  isGusty,
+  WIND_TONE_TEXT_CLASS,
+  SHORE_DIRECTION_TEXT_CLASS,
+} from "@/lib/wind/categorize";
 
 interface BookingRow {
   booking: Booking;
@@ -38,6 +44,7 @@ export default function DashboardPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [currentWindKn, setCurrentWindKn] = useState<number | null>(null);
   const [currentWindDirectionDeg, setCurrentWindDirectionDeg] = useState<number | null>(null);
+  const [currentGustKn, setCurrentGustKn] = useState<number | null>(null);
   const [windThresholds] = useState(() => getWindThresholds());
 
   async function load() {
@@ -98,10 +105,12 @@ export default function DashboardPage() {
       .then((wind) => {
         setCurrentWindKn(wind.speedKn);
         setCurrentWindDirectionDeg(wind.directionDeg);
+        setCurrentGustKn(wind.gustKn);
       })
       .catch(() => {
         setCurrentWindKn(null);
         setCurrentWindDirectionDeg(null);
+        setCurrentGustKn(null);
       });
   }, []);
 
@@ -128,6 +137,10 @@ export default function DashboardPage() {
   const currentWind = currentWindKn !== null ? categorizeWind(currentWindKn, windThresholds) : null;
   const currentWindDirection =
     currentWindDirectionDeg !== null ? categorizeWindDirection(currentWindDirectionDeg, BEACH_FACING_DEG) : null;
+  const currentWindGusty =
+    currentWindKn !== null && currentGustKn !== null
+      ? isGusty(currentWindKn, currentGustKn, GUST_FACTOR_THRESHOLD)
+      : false;
 
   return (
     <div className="lf-scroll flex flex-1 flex-col overflow-y-auto pb-6">
@@ -202,7 +215,13 @@ export default function DashboardPage() {
                 · {currentWindDirection.label}
               </span>
             )}
+            {currentWindGusty && (
+              <span className="text-sm font-bold text-amber-700 dark:text-amber-300">· Böig</span>
+            )}
           </div>
+          {currentGustKn !== null && (
+            <p className="mt-0.5 text-xs text-lf-muted">Böen bis {Math.round(currentGustKn)}kn</p>
+          )}
           <p className="mt-1 text-xs text-lf-muted">Workum, IJsselmeer</p>
         </div>
       )}

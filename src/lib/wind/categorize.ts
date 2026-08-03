@@ -52,3 +52,8 @@ export const SHORE_DIRECTION_TEXT_CLASS: Record<ShoreDirection, string> = {
   "cross-shore": "text-lf-muted",
   offshore: "text-red-700 dark:text-red-300",
 };
+
+export function isGusty(speedKn: number, gustKn: number, gustFactorThreshold: number): boolean {
+  if (speedKn <= 0) return false;
+  return gustKn / speedKn >= gustFactorThreshold;
+}

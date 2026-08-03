@@ -6,6 +6,9 @@ export const WIND_LON = 5.4121;
 // Kompassrichtung, in die man vom Spot (Workum, IJsselmeer-Ostufer) aufs offene Wasser blickt.
 export const BEACH_FACING_DEG = 270;
 
+// Böen gelten ab diesem Verhältnis Böe/Grundwind als "böig" (schwerer vorhersehbar).
+export const GUST_FACTOR_THRESHOLD = 1.3;
+
 const THRESHOLDS_KEY = "letsfly_wind_thresholds";
 const DEFAULT_THRESHOLDS: WindThresholds = { minGoodKn: 12, maxGoodKn: 25 };
 
