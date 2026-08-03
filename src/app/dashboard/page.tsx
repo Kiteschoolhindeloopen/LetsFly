@@ -31,6 +31,13 @@ interface BookingRow {
   instructorName?: string;
 }
 
+const CANCELLATION_CUTOFF_MS = 3 * 24 * 60 * 60 * 1000;
+
+function isCancellable(row: BookingRow): boolean {
+  if (row.course.category !== "PRIVATE_HOURS") return true;
+  return new Date(row.slot.startsAt).getTime() - Date.now() >= CANCELLATION_CUTOFF_MS;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthUser();
@@ -114,9 +121,10 @@ export default function DashboardPage() {
       });
   }, []);
 
-  async function handleCancel(bookingId: string) {
-    setCancellingId(bookingId);
-    await getRepository().cancelBooking(bookingId);
+  async function handleCancel(row: BookingRow) {
+    if (!isCancellable(row)) return;
+    setCancellingId(row.booking.id);
+    await getRepository().cancelBooking(row.booking.id);
     await load();
     setCancellingId(null);
   }
@@ -305,30 +313,42 @@ export default function DashboardPage() {
         <p className="mb-2.5 text-[13px] font-bold text-foreground">Meine Buchungen</p>
         <div className="flex flex-col gap-2.5">
           {upcoming.length === 0 && <p className="text-sm text-lf-muted">Keine bevorstehenden Termine.</p>}
-          {upcoming.map(({ booking, slot, course, instructorName }) => (
-            <div
-              key={booking.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-lf-border p-3.5"
-            >
-              <div>
-                <p className="text-[13.5px] font-bold text-foreground">{course.name}</p>
-                <p className="mt-0.5 text-xs text-lf-muted">
-                  {formatDateTime(slot.startsAt)}
-                  {instructorName ? ` · mit ${instructorName}` : ""}
-                </p>
-                <p className="mt-0.5 text-xs text-lf-muted">
-                  {formatEuro(slot.priceCentsOverride ?? course.priceCents)}
-                </p>
-              </div>
-              <button
-                onClick={() => handleCancel(booking.id)}
-                disabled={cancellingId === booking.id}
-                className="shrink-0 rounded-full border border-red-200 px-3.5 py-1.5 text-xs font-bold text-red-600 disabled:opacity-50 dark:border-red-900 dark:text-red-400"
+          {upcoming.map((row) => {
+            const { booking, slot, course, instructorName } = row;
+            const cancellable = isCancellable(row);
+            return (
+              <div
+                key={booking.id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-lf-border p-3.5"
               >
-                {cancellingId === booking.id ? "…" : "Stornieren"}
-              </button>
-            </div>
-          ))}
+                <div>
+                  <p className="text-[13.5px] font-bold text-foreground">{course.name}</p>
+                  <p className="mt-0.5 text-xs text-lf-muted">
+                    {formatDateTime(slot.startsAt)}
+                    {instructorName ? ` · mit ${instructorName}` : ""}
+                  </p>
+                  <p className="mt-0.5 text-xs text-lf-muted">
+                    {formatEuro(slot.priceCentsOverride ?? course.priceCents)}
+                  </p>
+                </div>
+                {cancellable ? (
+                  <button
+                    onClick={() => handleCancel(row)}
+                    disabled={cancellingId === booking.id}
+                    className="shrink-0 rounded-full border border-red-200 px-3.5 py-1.5 text-xs font-bold text-red-600 disabled:opacity-50 dark:border-red-900 dark:text-red-400"
+                  >
+                    {cancellingId === booking.id ? "…" : "Stornieren"}
+                  </button>
+                ) : (
+                  <span className="shrink-0 text-right text-[11px] font-semibold text-lf-muted">
+                    Stornieren nicht mehr möglich
+                    <br />
+                    (weniger als 3 Tage vorher)
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
