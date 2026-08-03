@@ -126,7 +126,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
     setErrorMessage(null);
     try {
       const endsAt = new Date(selected.date);
-      endsAt.setHours(endsAt.getHours() + 1);
+      endsAt.setHours(endsAt.getHours() + 2);
       await getRepository().bookHourSlot({
         customerId: user.id,
         courseOfferingId,
@@ -232,7 +232,8 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                 </div>
                 <p className="text-base font-extrabold text-foreground">Termin gebucht!</p>
                 <p className="mt-1.5 text-sm text-lf-muted">
-                  {formatDateTime(selected.iso)} · 1 Stunde von deinem Paket abgezogen
+                  {formatDateTime(selected.iso)}
+                  {pkg ? " · 2 Stunden von deinem Paket abgezogen" : ""}
                 </p>
                 <button
                   onClick={() => router.push("/dashboard")}
@@ -253,7 +254,9 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
                   <div className="flex justify-between text-[13px]">
                     <span className="text-lf-muted">Kosten</span>
                     <span className="font-bold text-lf-ocean">
-                      {pkg ? "1 Stunde vom Paket" : formatEuro(course.pricePerHourCents ?? course.priceCents)}
+                      {pkg
+                        ? "2 Stunden vom Paket"
+                        : formatEuro(2 * (course.pricePerHourCents ?? course.priceCents))}
                     </span>
                   </div>
                 </div>

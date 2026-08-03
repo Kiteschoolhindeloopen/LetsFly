@@ -3,6 +3,7 @@ import { newId } from "../mock/storage";
 import type { Booking, HourPackagePurchase } from "../types";
 import type { BookHourSlotInput, CreateBookingInput } from "../repository";
 import { mapBooking, mapPackage, type BookingRow, type PackageRow, type SlotRow } from "./mappers";
+import { hourSlotWindows } from "../hourSlots";
 
 export async function getMyBookings(customerId: string): Promise<Booking[]> {
   const { data, error } = await supabase
@@ -94,40 +95,57 @@ export async function bookHourSlot(input: BookHourSlotInput): Promise<Booking> {
   if (!input.waiverAccepted) {
     throw new Error("Haftungsausschluss muss akzeptiert werden, bevor gebucht werden kann.");
   }
-  const { data: existingSlots, error: findError } = await supabase
-    .from("slots")
-    .select("*")
-    .eq("course_offering_id", input.courseOfferingId)
-    .eq("starts_at", input.startsAt);
-  if (findError) throw findError;
-  let slot = (existingSlots as SlotRow[])[0];
+  // A private lesson always occupies two consecutive one-hour slots.
+  const hourWindows = hourSlotWindows(input.startsAt);
 
-  if (!slot) {
-    const { data: created, error: createError } = await supabase
+  const slotIds: string[] = [];
+  for (const [i, window] of hourWindows.entries()) {
+    const { data: existingSlots, error: findError } = await supabase
       .from("slots")
-      .insert({
-        id: newId("slot"),
-        course_offering_id: input.courseOfferingId,
-        starts_at: input.startsAt,
-        ends_at: input.endsAt,
-        capacity: 1,
-        booked_count: 0,
-        status: "OPEN",
-      })
-      .select()
-      .single();
-    if (createError) throw createError;
-    slot = created as SlotRow;
-  } else if (slot.booked_count >= slot.capacity) {
-    throw new Error("Dieser Termin ist bereits vergeben");
+      .select("*")
+      .eq("course_offering_id", input.courseOfferingId)
+      .eq("starts_at", window.startsAt);
+    if (findError) throw findError;
+    let slot = (existingSlots as SlotRow[])[0];
+
+    if (slot && slot.booked_count >= slot.capacity) {
+      throw new Error(
+        i === 0
+          ? "Dieser Termin ist bereits vergeben"
+          : "Die Folgestunde ist bereits vergeben – bitte eine andere Startzeit wählen"
+      );
+    }
+
+    if (!slot) {
+      const { data: created, error: createError } = await supabase
+        .from("slots")
+        .insert({
+          id: newId("slot"),
+          course_offering_id: input.courseOfferingId,
+          starts_at: window.startsAt,
+          ends_at: window.endsAt,
+          capacity: 1,
+          booked_count: 0,
+          status: "OPEN",
+        })
+        .select()
+        .single();
+      if (createError) throw createError;
+      slot = created as SlotRow;
+    }
+    slotIds.push(slot.id);
   }
 
-  return createBooking({
-    customerId: input.customerId,
-    slotId: slot.id,
-    hourPackagePurchaseId: input.hourPackagePurchaseId,
-    waiverAccepted: input.waiverAccepted,
-  });
+  let booking: Booking | undefined;
+  for (const slotId of slotIds) {
+    booking = await createBooking({
+      customerId: input.customerId,
+      slotId,
+      hourPackagePurchaseId: input.hourPackagePurchaseId,
+      waiverAccepted: input.waiverAccepted,
+    });
+  }
+  return booking!;
 }
 
 export async function cancelBooking(bookingId: string): Promise<void> {

@@ -23,6 +23,7 @@ import type {
   SlotFilter,
 } from "../repository";
 import { loadCollection, newId, saveCollection } from "./storage";
+import { hourSlotWindows } from "../hourSlots";
 import {
   seedBookings,
   seedCourses,
@@ -193,30 +194,53 @@ export const mockRepository: Repository = {
     if (!input.waiverAccepted) {
       throw new Error("Haftungsausschluss muss akzeptiert werden, bevor gebucht werden kann.");
     }
-    const slots = getSlotsRaw();
-    let slot = slots.find(
-      (s) => s.courseOfferingId === input.courseOfferingId && s.startsAt === input.startsAt
-    );
-    if (!slot) {
-      slot = {
-        id: newId("slot"),
-        courseOfferingId: input.courseOfferingId,
-        startsAt: input.startsAt,
-        endsAt: input.endsAt,
-        capacity: 1,
-        bookedCount: 0,
-        status: "OPEN",
-      };
-      saveCollection(KEYS.slots, [slot, ...slots]);
-    } else if (slot.bookedCount >= slot.capacity) {
-      throw new Error("Dieser Termin ist bereits vergeben");
+    // A private lesson always occupies two consecutive one-hour slots.
+    const hourWindows = hourSlotWindows(input.startsAt);
+
+    const existing = getSlotsRaw();
+    for (const [i, window] of hourWindows.entries()) {
+      const slot = existing.find(
+        (s) => s.courseOfferingId === input.courseOfferingId && s.startsAt === window.startsAt
+      );
+      if (slot && slot.bookedCount >= slot.capacity) {
+        throw new Error(
+          i === 0
+            ? "Dieser Termin ist bereits vergeben"
+            : "Die Folgestunde ist bereits vergeben – bitte eine andere Startzeit wählen"
+        );
+      }
     }
-    return this.createBooking({
-      customerId: input.customerId,
-      slotId: slot.id,
-      hourPackagePurchaseId: input.hourPackagePurchaseId,
-      waiverAccepted: input.waiverAccepted,
+
+    const slotIds = hourWindows.map((window) => {
+      const slots = getSlotsRaw();
+      let slot = slots.find(
+        (s) => s.courseOfferingId === input.courseOfferingId && s.startsAt === window.startsAt
+      );
+      if (!slot) {
+        slot = {
+          id: newId("slot"),
+          courseOfferingId: input.courseOfferingId,
+          startsAt: window.startsAt,
+          endsAt: window.endsAt,
+          capacity: 1,
+          bookedCount: 0,
+          status: "OPEN",
+        };
+        saveCollection(KEYS.slots, [slot, ...slots]);
+      }
+      return slot.id;
     });
+
+    let booking: Booking | undefined;
+    for (const slotId of slotIds) {
+      booking = await this.createBooking({
+        customerId: input.customerId,
+        slotId,
+        hourPackagePurchaseId: input.hourPackagePurchaseId,
+        waiverAccepted: input.waiverAccepted,
+      });
+    }
+    return booking!;
   },
 
   async cancelBooking(bookingId: string) {
