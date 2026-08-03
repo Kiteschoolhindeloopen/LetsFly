@@ -331,7 +331,7 @@ export const mockRepository: Repository = {
         };
       }
       const slotEnd = new Date(window.startsAt);
-      slotEnd.setHours(slotEnd.getHours() + 1);
+      slotEnd.setHours(slotEnd.getHours() + 2);
       return {
         id: newId("slot"),
         courseOfferingId: course.id,
