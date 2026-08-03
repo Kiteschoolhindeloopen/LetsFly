@@ -8,9 +8,9 @@ values
   ('course-camp-2day', '2 Tage Anfänger Kitecamp', 'GROUP_CAMP', '12h Unterricht + 2h Theorie, Gruppe 2-4 Personen.', 14, 2, 4, null, 24000, null, true, true, true),
   ('course-camp-4day', '4 Tage Intensiv Kitecamp', 'GROUP_CAMP', '20-24h Wasserzeit + tägliche Theorie.', null, 2, 4, null, 44000, null, true, true, true),
   ('course-camp-5day', '5 Tage Kitecamp Woche', 'GROUP_CAMP', '25-30h Wasserzeit.', null, 2, 4, null, 55000, null, true, true, true),
-  ('course-private-beginner', 'Privatstunden Beginner', 'PRIVATE_HOURS', '3h Stundenpaket.', null, null, null, 3, 21000, 7000, true, true, true),
-  ('course-private-intermediate', 'Privatstunden Intermediate', 'PRIVATE_HOURS', '9h Stundenpaket.', null, null, null, 9, 56700, 6300, true, true, true),
-  ('course-private-intensive', 'Privatstunden Intensive', 'PRIVATE_HOURS', '15h Stundenpaket.', null, null, null, 15, 84000, 5600, true, true, true);
+  ('course-private-beginner', 'Privatstunden Einstieg', 'PRIVATE_HOURS', '2h Stundenpaket.', null, null, null, 2, 16000, 8000, true, true, true),
+  ('course-private-intermediate', 'Privatstunden Fortgeschritten', 'PRIVATE_HOURS', '6h Stundenpaket.', null, null, null, 6, 39900, 6650, true, true, true),
+  ('course-private-intensive', 'Privatstunden Intensiv', 'PRIVATE_HOURS', '10h Stundenpaket.', null, null, null, 10, 60000, 6000, true, true, true);
 
 insert into public.videos (id, title, category, duration, image, description) values
   ('video-1', 'Kite-Check vor dem Start', 'Sicherheit & Material', '6:12', 'https://kiteschoolhindeloopen.com/images/bg-3.webp', 'So prüfst du Leinen, Aufhängung und Sicherheitssystem vor jeder Session – die wichtigste Routine, bevor du überhaupt ins Wasser gehst.'),

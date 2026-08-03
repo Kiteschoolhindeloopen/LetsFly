@@ -15,6 +15,7 @@ import { WaiverConsent } from "@/components/WaiverConsent";
 import { fetchHourlyWindKn, windHourKey } from "@/lib/wind/openMeteo";
 import { getWindThresholds } from "@/lib/wind/config";
 import { categorizeWind, WIND_TONE_TEXT_CLASS } from "@/lib/wind/categorize";
+import { GROUP_DISCOUNT_PERCENT, groupSize, pricePerPersonHourCents } from "@/lib/pricing";
 
 const HOURS = [10, 11, 12, 13, 14, 15, 16, 17];
 const WEEKDAY_LABELS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -51,6 +52,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
   const [bookedIsoSet, setBookedIsoSet] = useState<Set<string>>(new Set());
   const [pkg, setPkg] = useState<HourPackagePurchase | null>(null);
   const [selected, setSelected] = useState<Cell | null>(null);
+  const [participants, setParticipants] = useState(1);
   const [booking, setBooking] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -117,6 +119,7 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
     setErrorMessage(null);
     setConfirmed(false);
     setWaiverAccepted(false);
+    setParticipants(1);
     setSelected(cell);
   }
 
@@ -246,19 +249,70 @@ function HourPicker({ courseOfferingId, course }: { courseOfferingId: string; co
               <>
                 <p className="text-base font-extrabold text-foreground">Termin bestätigen</p>
                 <p className="mt-1 text-sm text-lf-muted">{formatDateTime(selected.iso)}</p>
+
+                {!pkg && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-foreground">Teilnehmer</p>
+                    <div className="mt-1.5 flex gap-2">
+                      {[1, 2, 3].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setParticipants(n)}
+                          className={
+                            participants === n
+                              ? "rounded-lg bg-lf-ocean px-3.5 py-2 text-xs font-bold text-white"
+                              : "rounded-lg border border-lf-border px-3.5 py-2 text-xs font-bold text-foreground"
+                          }
+                        >
+                          {n === 3 ? "3+" : n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-4 flex flex-col gap-2 rounded-xl bg-lf-ocean-light p-3.5">
                   <div className="flex justify-between text-[13px]">
                     <span className="text-lf-muted">Angebot</span>
                     <span className="font-bold text-lf-ocean">{course.name}</span>
                   </div>
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-lf-muted">Kosten</span>
-                    <span className="font-bold text-lf-ocean">
-                      {pkg
-                        ? "2 Stunden vom Paket"
-                        : formatEuro(2 * (course.pricePerHourCents ?? course.priceCents))}
-                    </span>
-                  </div>
+                  {pkg ? (
+                    <div className="flex justify-between text-[13px]">
+                      <span className="text-lf-muted">Kosten</span>
+                      <span className="font-bold text-lf-ocean">2 Stunden vom Paket</span>
+                    </div>
+                  ) : (
+                    <>
+                      {GROUP_DISCOUNT_PERCENT[groupSize(participants)] > 0 && (
+                        <div className="flex justify-between text-[13px]">
+                          <span className="text-lf-muted">Gruppenrabatt</span>
+                          <span className="font-bold text-emerald-600">
+                            -{GROUP_DISCOUNT_PERCENT[groupSize(participants)]}%
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-lf-muted">Preis pro Person</span>
+                        <span className="font-bold text-lf-ocean">
+                          {formatEuro(
+                            2 * pricePerPersonHourCents(course.pricePerHourCents ?? course.priceCents, participants)
+                          )}
+                        </span>
+                      </div>
+                      {participants > 1 && (
+                        <div className="flex justify-between text-[13px]">
+                          <span className="text-lf-muted">Gesamt ({participants === 3 ? "3+" : participants} Pers.)</span>
+                          <span className="font-bold text-lf-ocean">
+                            {formatEuro(
+                              participants *
+                                2 *
+                                pricePerPersonHourCents(course.pricePerHourCents ?? course.priceCents, participants)
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
                 <WaiverConsent accepted={waiverAccepted} onChange={setWaiverAccepted} />
                 <div className="mt-5 flex gap-2.5">
