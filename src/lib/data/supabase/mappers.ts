@@ -2,6 +2,8 @@ import type {
   AvailabilityWindow,
   Booking,
   CourseOffering,
+  GroupSession,
+  GroupSessionAssignment,
   HourPackagePurchase,
   InstructorSlotRequest,
   Notification,
@@ -272,5 +274,57 @@ export function mapPackageRequest(row: PackageRequestRow): PackageRequest {
     adminNote: row.admin_note ?? undefined,
     resolvedAt: row.resolved_at ?? undefined,
     createdAt: row.created_at,
+  };
+}
+
+export interface GroupSessionRow {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  beginner_capacity: number;
+  advanced_capacity: number;
+  status: "OPEN" | "CANCELLED" | "COMPLETED";
+  created_by_admin_id: string;
+  notes: string | null;
+}
+
+export interface GroupSessionAssignmentRow {
+  id: string;
+  group_session_id: string;
+  customer_id: string;
+  level: "BEGINNER" | "ADVANCED";
+  seats: number;
+  hour_package_purchase_id: string | null;
+  status: "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
+  assigned_by_admin_id: string;
+  created_at: string;
+  cancelled_at: string | null;
+}
+
+export function mapGroupSession(row: GroupSessionRow): GroupSession {
+  return {
+    id: row.id,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    beginnerCapacity: row.beginner_capacity,
+    advancedCapacity: row.advanced_capacity,
+    status: row.status,
+    createdByAdminId: row.created_by_admin_id,
+    notes: row.notes ?? undefined,
+  };
+}
+
+export function mapGroupSessionAssignment(row: GroupSessionAssignmentRow): GroupSessionAssignment {
+  return {
+    id: row.id,
+    groupSessionId: row.group_session_id,
+    customerId: row.customer_id,
+    level: row.level,
+    seats: row.seats,
+    hourPackagePurchaseId: row.hour_package_purchase_id ?? undefined,
+    status: row.status,
+    assignedByAdminId: row.assigned_by_admin_id,
+    createdAt: row.created_at,
+    cancelledAt: row.cancelled_at ?? undefined,
   };
 }

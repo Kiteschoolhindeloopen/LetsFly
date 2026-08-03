@@ -8,8 +8,12 @@ import {
   type Booking,
   type CourseCategory,
   type CourseOffering,
+  type GroupSession,
+  type GroupSessionAssignment,
+  type HourPackagePurchase,
   type InstructorSlotRequest,
   type PackageRequest,
+  type SkillLevel,
   type Slot,
   type User,
 } from "@/lib/data/repository";
@@ -21,7 +25,7 @@ import { getWindThresholds, saveWindThresholds } from "@/lib/wind/config";
 import type { WindThresholds } from "@/lib/wind/categorize";
 import { supabase } from "@/lib/supabase/client";
 
-type Tab = "uebersicht" | "wind" | "anfragen" | "kundenanfragen" | "verwaltung";
+type Tab = "uebersicht" | "wind" | "anfragen" | "kundenanfragen" | "gruppensessions" | "verwaltung";
 
 interface BookingRow {
   booking: Booking;
@@ -78,6 +82,28 @@ export default function AdminPage() {
   const [newWindowCategory, setNewWindowCategory] = useState<CourseCategory>("PRIVATE_HOURS");
   const [creatingWindow, setCreatingWindow] = useState(false);
 
+  const [groupSessions, setGroupSessions] = useState<GroupSession[]>([]);
+  const [groupSessionAssignments, setGroupSessionAssignments] = useState<GroupSessionAssignment[]>([]);
+  const [newSessionStart, setNewSessionStart] = useState("");
+  const [newSessionEnd, setNewSessionEnd] = useState("");
+  const [newSessionBeginnerCap, setNewSessionBeginnerCap] = useState("4");
+  const [newSessionAdvancedCap, setNewSessionAdvancedCap] = useState("4");
+  const [newSessionNotes, setNewSessionNotes] = useState("");
+  const [creatingSession, setCreatingSession] = useState(false);
+
+  const [assignEmail, setAssignEmail] = useState("");
+  const [assignLookupResult, setAssignLookupResult] = useState<User | null | undefined>(undefined);
+  const [assignLookupError, setAssignLookupError] = useState<string | null>(null);
+  const [assignLookingUp, setAssignLookingUp] = useState(false);
+  const [assignPackages, setAssignPackages] = useState<HourPackagePurchase[]>([]);
+  const [assignSessionId, setAssignSessionId] = useState("");
+  const [assignLevel, setAssignLevel] = useState<SkillLevel>("BEGINNER");
+  const [assignSeats, setAssignSeats] = useState("1");
+  const [assignPackageId, setAssignPackageId] = useState("");
+  const [assigningCustomer, setAssigningCustomer] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [assignSuccess, setAssignSuccess] = useState<string | null>(null);
+
   const [windThresholds, setWindThresholds] = useState<WindThresholds>(() => getWindThresholds());
   const [thresholdsSaved, setThresholdsSaved] = useState(false);
 
@@ -112,16 +138,27 @@ export default function AdminPage() {
 
   async function load() {
     const repo = getRepository();
-    const [allBookings, allCourses, allSlots, allInstructors, allRequests, allPackageRequests, allWindows] =
-      await Promise.all([
-        repo.getAllBookings(),
-        repo.getAllCourses(),
-        repo.getSlots(),
-        repo.getInstructors(),
-        repo.getAllRequests(),
-        repo.getAllPackageRequests(),
-        repo.getAvailabilityWindows(),
-      ]);
+    const [
+      allBookings,
+      allCourses,
+      allSlots,
+      allInstructors,
+      allRequests,
+      allPackageRequests,
+      allWindows,
+      allGroupSessions,
+      allGroupSessionAssignments,
+    ] = await Promise.all([
+      repo.getAllBookings(),
+      repo.getAllCourses(),
+      repo.getSlots(),
+      repo.getInstructors(),
+      repo.getAllRequests(),
+      repo.getAllPackageRequests(),
+      repo.getAvailabilityWindows(),
+      repo.getGroupSessions(),
+      repo.getGroupSessionAssignments(),
+    ]);
 
     const courseById = new Map(allCourses.map((c) => [c.id, c]));
     const slotById = new Map(allSlots.map((s) => [s.id, s]));
@@ -161,6 +198,8 @@ export default function AdminPage() {
     setPackageRequests(allPackageRequests);
     setWindows(allWindows.slice().sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
     setRevenue({ totalCents, byCourse });
+    setGroupSessions(allGroupSessions.slice().sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
+    setGroupSessionAssignments(allGroupSessionAssignments);
   }
 
   useEffect(() => {
@@ -266,6 +305,76 @@ export default function AdminPage() {
     setCreatingWindow(false);
   }
 
+  async function handleCreateGroupSession(e: React.FormEvent) {
+    e.preventDefault();
+    const beginnerCapacity = parseInt(newSessionBeginnerCap, 10);
+    const advancedCapacity = parseInt(newSessionAdvancedCap, 10);
+    if (!newSessionStart || !newSessionEnd || Number.isNaN(beginnerCapacity) || Number.isNaN(advancedCapacity)) return;
+    setCreatingSession(true);
+    await getRepository().createGroupSession({
+      startsAt: new Date(newSessionStart).toISOString(),
+      endsAt: new Date(newSessionEnd).toISOString(),
+      beginnerCapacity,
+      advancedCapacity,
+      createdByAdminId: user.id,
+      notes: newSessionNotes.trim() || undefined,
+    });
+    setNewSessionStart("");
+    setNewSessionEnd("");
+    setNewSessionBeginnerCap("4");
+    setNewSessionAdvancedCap("4");
+    setNewSessionNotes("");
+    await load();
+    setCreatingSession(false);
+  }
+
+  async function handleLookupAssignCustomer() {
+    if (!assignEmail.trim()) return;
+    setAssignLookingUp(true);
+    setAssignLookupError(null);
+    setAssignLookupResult(undefined);
+    setAssignPackages([]);
+    setAssignPackageId("");
+    const repo = getRepository();
+    const found = await repo.getUserByEmail(assignEmail.trim());
+    if (!found) {
+      setAssignLookupError("Kein Account mit dieser E-Mail gefunden.");
+      setAssignLookupResult(null);
+    } else {
+      setAssignLookupResult(found);
+      setAssignPackages(await repo.getMyPackages(found.id));
+    }
+    setAssignLookingUp(false);
+  }
+
+  async function handleAssignCustomer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assignLookupResult || !assignSessionId) return;
+    const seats = parseInt(assignSeats, 10) || 1;
+    setAssigningCustomer(true);
+    setAssignError(null);
+    setAssignSuccess(null);
+    try {
+      await getRepository().assignCustomerToGroupSession({
+        groupSessionId: assignSessionId,
+        customerId: assignLookupResult.id,
+        level: assignLevel,
+        seats,
+        hourPackagePurchaseId: assignPackageId || undefined,
+        assignedByAdminId: user.id,
+      });
+      setAssignSuccess(`${assignLookupResult.name} wurde der Session zugewiesen.`);
+      setAssignSessionId("");
+      setAssignSeats("1");
+      setAssignPackageId("");
+      await load();
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : "Zuweisung fehlgeschlagen.");
+    } finally {
+      setAssigningCustomer(false);
+    }
+  }
+
   async function handleCreateAccount(e: React.FormEvent) {
     e.preventDefault();
     setCreateAccountError(null);
@@ -322,6 +431,20 @@ export default function AdminPage() {
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
 
+  const sessionsByDay = new Map<string, GroupSession[]>();
+  for (const gs of groupSessions) {
+    const day = gs.startsAt.slice(0, 10);
+    const dayList = sessionsByDay.get(day) ?? [];
+    dayList.push(gs);
+    sessionsByDay.set(day, dayList);
+  }
+
+  function bookedSeats(sessionId: string, level: SkillLevel) {
+    return groupSessionAssignments
+      .filter((a) => a.groupSessionId === sessionId && a.level === level && a.status === "CONFIRMED")
+      .reduce((sum, a) => sum + a.seats, 0);
+  }
+
   return (
     <main className="flex-1 px-5 py-6">
       <div className="flex items-start justify-between gap-3">
@@ -347,6 +470,7 @@ export default function AdminPage() {
             ["wind", "Wind-Absage"],
             ["anfragen", "Anfragen"],
             ["kundenanfragen", "Kundenanfragen"],
+            ["gruppensessions", "Gruppensessions"],
             ["verwaltung", "Verwaltung"],
           ] as [Tab, string][]
         ).map(([value, label]) => (
@@ -683,6 +807,199 @@ export default function AdminPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {tab === "gruppensessions" && (
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-foreground">Gruppensession anlegen</h2>
+          <form
+            onSubmit={handleCreateGroupSession}
+            className="mt-2 flex flex-col gap-3 rounded-2xl border border-lf-border bg-lf-card p-5"
+          >
+            <div className="flex gap-3">
+              <input
+                type="datetime-local"
+                value={newSessionStart}
+                onChange={(e) => setNewSessionStart(e.target.value)}
+                required
+                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+              />
+              <input
+                type="datetime-local"
+                value={newSessionEnd}
+                onChange={(e) => setNewSessionEnd(e.target.value)}
+                required
+                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex gap-3">
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Anfänger-Plätze
+                <input
+                  type="number"
+                  min={0}
+                  value={newSessionBeginnerCap}
+                  onChange={(e) => setNewSessionBeginnerCap(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Fortgeschrittene-Plätze
+                <input
+                  type="number"
+                  min={0}
+                  value={newSessionAdvancedCap}
+                  onChange={(e) => setNewSessionAdvancedCap(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+            </div>
+            <input
+              type="text"
+              value={newSessionNotes}
+              onChange={(e) => setNewSessionNotes(e.target.value)}
+              placeholder="Notiz (optional)"
+              className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={creatingSession}
+              className="self-start rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {creatingSession ? "Erstelle…" : "Session anlegen"}
+            </button>
+          </form>
+
+          <h2 className="mt-8 text-sm font-semibold text-foreground">Tagesübersicht</h2>
+          <div className="mt-2 flex flex-col gap-4">
+            {sessionsByDay.size === 0 && (
+              <p className="text-sm text-lf-muted">Noch keine Gruppensessions angelegt.</p>
+            )}
+            {Array.from(sessionsByDay.entries()).map(([day, sessions]) => (
+              <div key={day}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-lf-muted">
+                  {new Date(day).toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "2-digit" })}
+                </p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {sessions.map((gs) => (
+                    <div key={gs.id} className="rounded-xl border border-lf-border p-3">
+                      <p className="text-sm font-semibold text-foreground">
+                        {formatDateTime(gs.startsAt)} – {formatDateTime(gs.endsAt)}
+                      </p>
+                      <div className="mt-1 flex gap-4 text-xs text-lf-muted">
+                        <span>
+                          Anfänger: {bookedSeats(gs.id, "BEGINNER")}/{gs.beginnerCapacity}
+                        </span>
+                        <span>
+                          Fortgeschritten: {bookedSeats(gs.id, "ADVANCED")}/{gs.advancedCapacity}
+                        </span>
+                      </div>
+                      {gs.notes && <p className="mt-1 text-xs text-lf-muted">„{gs.notes}"</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <h2 className="mt-8 text-sm font-semibold text-foreground">Kunde einer Session zuweisen</h2>
+          <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-lf-border bg-lf-card p-5">
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={assignEmail}
+                onChange={(e) => setAssignEmail(e.target.value)}
+                placeholder="E-Mail des Kunden"
+                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleLookupAssignCustomer}
+                disabled={assignLookingUp || !assignEmail.trim()}
+                className="shrink-0 rounded-full border border-lf-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-50"
+              >
+                {assignLookingUp ? "Suche…" : "Suchen"}
+              </button>
+            </div>
+            {assignLookupError && <p className="text-xs font-semibold text-red-600 dark:text-red-400">{assignLookupError}</p>}
+            {assignLookupResult && (
+              <form onSubmit={handleAssignCustomer} className="flex flex-col gap-3">
+                <p className="text-sm text-foreground">
+                  Kunde: <span className="font-semibold">{assignLookupResult.name}</span>
+                </p>
+                <select
+                  value={assignSessionId}
+                  onChange={(e) => setAssignSessionId(e.target.value)}
+                  required
+                  className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Session wählen…</option>
+                  {groupSessions.map((gs) => (
+                    <option key={gs.id} value={gs.id}>
+                      {formatDateTime(gs.startsAt)} (A: {bookedSeats(gs.id, "BEGINNER")}/{gs.beginnerCapacity} · F:{" "}
+                      {bookedSeats(gs.id, "ADVANCED")}/{gs.advancedCapacity})
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <input
+                      type="radio"
+                      name="assignLevel"
+                      checked={assignLevel === "BEGINNER"}
+                      onChange={() => setAssignLevel("BEGINNER")}
+                    />
+                    Anfänger
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <input
+                      type="radio"
+                      name="assignLevel"
+                      checked={assignLevel === "ADVANCED"}
+                      onChange={() => setAssignLevel("ADVANCED")}
+                    />
+                    Fortgeschritten
+                  </label>
+                  <label className="ml-auto flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    Plätze
+                    <input
+                      type="number"
+                      min={1}
+                      value={assignSeats}
+                      onChange={(e) => setAssignSeats(e.target.value)}
+                      className="w-16 rounded-lg border border-lf-border bg-background px-2 py-1 text-sm"
+                    />
+                  </label>
+                </div>
+                {assignPackages.length > 0 && (
+                  <select
+                    value={assignPackageId}
+                    onChange={(e) => setAssignPackageId(e.target.value)}
+                    className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Kein bestehendes Paket verknüpfen</option>
+                    {assignPackages.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {courseById.get(p.courseOfferingId)?.name ?? "Paket"} ({p.hoursScheduled}/{p.totalHours}h)
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {assignError && <p className="text-xs font-semibold text-red-600 dark:text-red-400">{assignError}</p>}
+                {assignSuccess && (
+                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{assignSuccess}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={assigningCustomer || !assignSessionId}
+                  className="self-start rounded-full bg-lf-ocean px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {assigningCustomer ? "Weise zu…" : "Zuweisen"}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       )}
 

@@ -7,6 +7,7 @@ import * as videos from "./videos";
 import * as notifications from "./notifications";
 import * as users from "./users";
 import * as packageRequests from "./packageRequests";
+import * as groupSessions from "./groupSessions";
 
 export const supabaseRepository: Repository = {
   getCourses: courses.getCourses,
@@ -51,4 +52,10 @@ export const supabaseRepository: Repository = {
   resolvePackageRequest: packageRequests.resolvePackageRequest,
   proposeAlternativeDate: packageRequests.proposeAlternativeDate,
   respondToProposedDate: packageRequests.respondToProposedDate,
+
+  getGroupSessions: groupSessions.getGroupSessions,
+  createGroupSession: groupSessions.createGroupSession,
+  getGroupSessionAssignments: groupSessions.getGroupSessionAssignments,
+  assignCustomerToGroupSession: groupSessions.assignCustomerToGroupSession,
+  cancelGroupSessionAssignment: groupSessions.cancelGroupSessionAssignment,
 };

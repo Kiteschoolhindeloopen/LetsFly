@@ -141,3 +141,30 @@ export interface PackageRequest {
   resolvedAt?: string;
   createdAt: string;
 }
+
+export type SkillLevel = "BEGINNER" | "ADVANCED";
+export type GroupSessionStatus = "OPEN" | "CANCELLED" | "COMPLETED";
+
+export interface GroupSession {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  beginnerCapacity: number;
+  advancedCapacity: number;
+  status: GroupSessionStatus;
+  createdByAdminId: string;
+  notes?: string;
+}
+
+export interface GroupSessionAssignment {
+  id: string;
+  groupSessionId: string;
+  customerId: string;
+  level: SkillLevel;
+  seats: number;
+  hourPackagePurchaseId?: string;
+  status: BookingStatus;
+  assignedByAdminId: string;
+  createdAt: string;
+  cancelledAt?: string;
+}

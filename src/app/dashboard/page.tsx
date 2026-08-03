@@ -6,6 +6,8 @@ import {
   getRepository,
   type Booking,
   type CourseOffering,
+  type GroupSession,
+  type GroupSessionAssignment,
   type HourPackagePurchase,
   type Notification,
   type Slot,
@@ -44,6 +46,7 @@ export default function DashboardPage() {
   const [customer, setCustomer] = useState<User | null>(null);
   const [pkg, setPkg] = useState<HourPackagePurchase | null>(null);
   const [upcoming, setUpcoming] = useState<BookingRow[]>([]);
+  const [myGroupSessions, setMyGroupSessions] = useState<{ assignment: GroupSessionAssignment; session: GroupSession }[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [windBannerDismissed, setWindBannerDismissed] = useState(false);
@@ -56,14 +59,17 @@ export default function DashboardPage() {
 
   async function load() {
     const repo = getRepository();
-    const [customerData, myPackages, myBookings, courses, slots, myNotifications] = await Promise.all([
-      repo.getCustomer(user.id),
-      repo.getMyPackages(user.id),
-      repo.getMyBookings(user.id),
-      repo.getCourses(),
-      repo.getSlots(),
-      repo.getNotifications(user.id),
-    ]);
+    const [customerData, myPackages, myBookings, courses, slots, myNotifications, myAssignments, allGroupSessions] =
+      await Promise.all([
+        repo.getCustomer(user.id),
+        repo.getMyPackages(user.id),
+        repo.getMyBookings(user.id),
+        repo.getCourses(),
+        repo.getSlots(),
+        repo.getNotifications(user.id),
+        repo.getGroupSessionAssignments({ customerId: user.id }),
+        repo.getGroupSessions(),
+      ]);
 
     const courseById = new Map(courses.map((c) => [c.id, c]));
     const slotById = new Map(slots.map((s) => [s.id, s]));
@@ -94,11 +100,21 @@ export default function DashboardPage() {
     const msUntilNext = rows[0] ? new Date(rows[0].slot.startsAt).getTime() - Date.now() : null;
     const withinWindWindow = msUntilNext !== null && msUntilNext >= 0 && msUntilNext <= WIND_WARNING_WINDOW_MS;
 
+    const sessionById = new Map(allGroupSessions.map((s) => [s.id, s]));
+    const myConfirmedGroupSessions = myAssignments
+      .filter((a) => a.status === "CONFIRMED")
+      .flatMap((assignment) => {
+        const session = sessionById.get(assignment.groupSessionId);
+        return session ? [{ assignment, session }] : [];
+      })
+      .sort((a, b) => a.session.startsAt.localeCompare(b.session.startsAt));
+
     setCustomer(customerData);
     setPkg(myPackages[0] ?? null);
     setUpcoming(rows);
     setNotifications(myNotifications);
     setWindBannerActive(withinWindWindow);
+    setMyGroupSessions(myConfirmedGroupSessions);
   }
 
   useEffect(() => {
@@ -351,6 +367,27 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+
+      {myGroupSessions.length > 0 && (
+        <div className="mx-5 mt-6">
+          <p className="mb-2.5 text-[13px] font-bold text-foreground">Meine Gruppentermine</p>
+          <p className="mb-2.5 text-xs text-lf-muted">
+            Diese Termine wurden dir von der Kiteschule zugewiesen — der Termin lässt sich hier nicht selbst ändern.
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {myGroupSessions.map(({ assignment, session }) => (
+              <div key={assignment.id} className="rounded-2xl border border-lf-border p-3.5">
+                <p className="text-[13.5px] font-bold text-foreground">
+                  {formatDateTime(session.startsAt)} – {formatDateTime(session.endsAt)}
+                </p>
+                <p className="mt-0.5 text-xs text-lf-muted">
+                  Level: {assignment.level === "BEGINNER" ? "Anfänger" : "Fortgeschritten"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {notifPanelOpen && (
         <div

@@ -2,6 +2,8 @@ import type {
   AvailabilityWindow,
   Booking,
   CourseOffering,
+  GroupSession,
+  GroupSessionAssignment,
   HourPackagePurchase,
   InstructorSlotRequest,
   Notification,
@@ -14,11 +16,15 @@ import type {
   WatchedVideo,
 } from "../types";
 import type {
+  AssignCustomerToGroupSessionInput,
   BookHourSlotInput,
   CreateBookingInput,
+  CreateGroupSessionInput,
   CreateInstructorRequestInput,
   CreatePackageRequestInput,
   CreateWindowInput,
+  GroupSessionAssignmentFilter,
+  GroupSessionFilter,
   Repository,
   SlotFilter,
 } from "../repository";
@@ -50,6 +56,8 @@ const KEYS = {
   watchedVideos: "letsfly.watchedVideos",
   notifications: "letsfly.notifications",
   packageRequests: "letsfly.packageRequests",
+  groupSessions: "letsfly.groupSessions",
+  groupSessionAssignments: "letsfly.groupSessionAssignments",
 };
 
 function getCourses(): CourseOffering[] {
@@ -84,6 +92,12 @@ function getNotificationsRaw(): Notification[] {
 }
 function getPackageRequestsRaw(): PackageRequest[] {
   return loadCollection(KEYS.packageRequests, seedPackageRequests);
+}
+function getGroupSessionsRaw(): GroupSession[] {
+  return loadCollection(KEYS.groupSessions, []);
+}
+function getGroupSessionAssignmentsRaw(): GroupSessionAssignment[] {
+  return loadCollection(KEYS.groupSessionAssignments, []);
 }
 
 export const mockRepository: Repository = {
@@ -576,5 +590,112 @@ export const mockRepository: Repository = {
       bookings.map((b) => (b.id === bookingId ? updated : b))
     );
     return updated;
+  },
+
+  async getGroupSessions(filter?: GroupSessionFilter) {
+    let sessions = getGroupSessionsRaw();
+    if (filter?.from) sessions = sessions.filter((s) => s.startsAt >= filter.from!);
+    if (filter?.to) sessions = sessions.filter((s) => s.startsAt <= filter.to!);
+    return sessions;
+  },
+
+  async createGroupSession(input: CreateGroupSessionInput) {
+    const session: GroupSession = {
+      id: newId("groupsession"),
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      beginnerCapacity: input.beginnerCapacity,
+      advancedCapacity: input.advancedCapacity,
+      status: "OPEN",
+      createdByAdminId: input.createdByAdminId,
+      notes: input.notes,
+    };
+    saveCollection(KEYS.groupSessions, [session, ...getGroupSessionsRaw()]);
+    return session;
+  },
+
+  async getGroupSessionAssignments(filter?: GroupSessionAssignmentFilter) {
+    let assignments = getGroupSessionAssignmentsRaw();
+    if (filter?.groupSessionId) assignments = assignments.filter((a) => a.groupSessionId === filter.groupSessionId);
+    if (filter?.customerId) assignments = assignments.filter((a) => a.customerId === filter.customerId);
+    return assignments;
+  },
+
+  async assignCustomerToGroupSession(input: AssignCustomerToGroupSessionInput) {
+    const seats = input.seats ?? 1;
+    const session = getGroupSessionsRaw().find((s) => s.id === input.groupSessionId);
+    if (!session) throw new Error(`Group session ${input.groupSessionId} not found`);
+    const existing = getGroupSessionAssignmentsRaw().filter(
+      (a) => a.groupSessionId === input.groupSessionId && a.level === input.level && a.status === "CONFIRMED"
+    );
+    const bookedSeats = existing.reduce((sum, a) => sum + a.seats, 0);
+    const capacity = input.level === "BEGINNER" ? session.beginnerCapacity : session.advancedCapacity;
+    if (bookedSeats + seats > capacity) {
+      throw new Error("Für dieses Level sind in dieser Session nicht genug freie Plätze.");
+    }
+
+    const assignment: GroupSessionAssignment = {
+      id: newId("groupassign"),
+      groupSessionId: input.groupSessionId,
+      customerId: input.customerId,
+      level: input.level,
+      seats,
+      hourPackagePurchaseId: input.hourPackagePurchaseId,
+      status: "CONFIRMED",
+      assignedByAdminId: input.assignedByAdminId,
+      createdAt: new Date().toISOString(),
+    };
+    saveCollection(KEYS.groupSessionAssignments, [assignment, ...getGroupSessionAssignmentsRaw()]);
+
+    if (input.hourPackagePurchaseId) {
+      const packages = getPackages();
+      const pkg = packages.find((p) => p.id === input.hourPackagePurchaseId);
+      if (pkg) {
+        const updatedPkg: HourPackagePurchase = { ...pkg, hoursScheduled: pkg.hoursScheduled + seats };
+        saveCollection(
+          KEYS.packages,
+          packages.map((p) => (p.id === pkg.id ? updatedPkg : p))
+        );
+      }
+    }
+
+    await this.createNotification({
+      customerId: input.customerId,
+      icon: "🏄",
+      title: "Gruppensession zugewiesen",
+      message: `Dir wurde eine Gruppensession am ${new Date(session.startsAt).toLocaleString("de-DE")} zugewiesen.`,
+    });
+
+    return assignment;
+  },
+
+  async cancelGroupSessionAssignment(assignmentId: string) {
+    const assignments = getGroupSessionAssignmentsRaw();
+    const assignment = assignments.find((a) => a.id === assignmentId);
+    if (!assignment) throw new Error(`Group session assignment ${assignmentId} not found`);
+    const updated: GroupSessionAssignment = {
+      ...assignment,
+      status: "CANCELLED",
+      cancelledAt: new Date().toISOString(),
+    };
+    saveCollection(
+      KEYS.groupSessionAssignments,
+      assignments.map((a) => (a.id === assignmentId ? updated : a))
+    );
+
+    if (assignment.hourPackagePurchaseId) {
+      const packages = getPackages();
+      const pkg = packages.find((p) => p.id === assignment.hourPackagePurchaseId);
+      if (pkg) {
+        const updatedPkg: HourPackagePurchase = {
+          ...pkg,
+          hoursScheduled: Math.max(0, pkg.hoursScheduled - assignment.seats),
+        };
+        saveCollection(
+          KEYS.packages,
+          packages.map((p) => (p.id === pkg.id ? updatedPkg : p))
+        );
+      }
+    }
   },
 };

@@ -3,12 +3,15 @@ import type {
   Booking,
   CourseCategory,
   CourseOffering,
+  GroupSession,
+  GroupSessionAssignment,
   HourPackagePurchase,
   InstructorSlotRequest,
   Notification,
   PackageRequest,
   PackageRequestStatus,
   RequestStatus,
+  SkillLevel,
   Slot,
   User,
   Video,
@@ -58,6 +61,34 @@ export interface CreatePackageRequestInput {
   courseOfferingId: string;
   requestedDate: string;
   note?: string;
+}
+
+export interface GroupSessionFilter {
+  from?: string;
+  to?: string;
+}
+
+export interface GroupSessionAssignmentFilter {
+  groupSessionId?: string;
+  customerId?: string;
+}
+
+export interface CreateGroupSessionInput {
+  startsAt: string;
+  endsAt: string;
+  beginnerCapacity: number;
+  advancedCapacity: number;
+  createdByAdminId: string;
+  notes?: string;
+}
+
+export interface AssignCustomerToGroupSessionInput {
+  groupSessionId: string;
+  customerId: string;
+  level: SkillLevel;
+  seats?: number;
+  hourPackagePurchaseId?: string;
+  assignedByAdminId: string;
 }
 
 /**
@@ -119,6 +150,12 @@ export interface Repository {
   ): Promise<PackageRequest>;
   proposeAlternativeDate(requestId: string, proposedDate: string, adminNote?: string): Promise<PackageRequest>;
   respondToProposedDate(requestId: string, accept: boolean): Promise<PackageRequest>;
+
+  getGroupSessions(filter?: GroupSessionFilter): Promise<GroupSession[]>;
+  createGroupSession(input: CreateGroupSessionInput): Promise<GroupSession>;
+  getGroupSessionAssignments(filter?: GroupSessionAssignmentFilter): Promise<GroupSessionAssignment[]>;
+  assignCustomerToGroupSession(input: AssignCustomerToGroupSessionInput): Promise<GroupSessionAssignment>;
+  cancelGroupSessionAssignment(assignmentId: string): Promise<void>;
 }
 
 export function getRepository(): Repository {
