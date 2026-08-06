@@ -84,12 +84,14 @@ export default function AdminPage() {
 
   const [groupSessions, setGroupSessions] = useState<GroupSession[]>([]);
   const [groupSessionAssignments, setGroupSessionAssignments] = useState<GroupSessionAssignment[]>([]);
-  const [newSessionStart, setNewSessionStart] = useState("");
-  const [newSessionEnd, setNewSessionEnd] = useState("");
+  const [newSessionDate, setNewSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newSessionStartTime, setNewSessionStartTime] = useState("10:00");
+  const [newSessionDurationHours, setNewSessionDurationHours] = useState("2");
   const [newSessionBeginnerCap, setNewSessionBeginnerCap] = useState("4");
   const [newSessionAdvancedCap, setNewSessionAdvancedCap] = useState("4");
   const [newSessionNotes, setNewSessionNotes] = useState("");
   const [creatingSession, setCreatingSession] = useState(false);
+  const [createSessionError, setCreateSessionError] = useState<string | null>(null);
 
   const [assignEmail, setAssignEmail] = useState("");
   const [assignLookupResult, setAssignLookupResult] = useState<User | null | undefined>(undefined);
@@ -309,23 +311,40 @@ export default function AdminPage() {
     e.preventDefault();
     const beginnerCapacity = parseInt(newSessionBeginnerCap, 10);
     const advancedCapacity = parseInt(newSessionAdvancedCap, 10);
-    if (!newSessionStart || !newSessionEnd || Number.isNaN(beginnerCapacity) || Number.isNaN(advancedCapacity)) return;
+    const durationHours = parseFloat(newSessionDurationHours);
+    if (
+      !newSessionDate ||
+      !newSessionStartTime ||
+      Number.isNaN(beginnerCapacity) ||
+      Number.isNaN(advancedCapacity) ||
+      Number.isNaN(durationHours)
+    ) {
+      return;
+    }
+    const startsAt = new Date(`${newSessionDate}T${newSessionStartTime}`);
+    const endsAt = new Date(startsAt.getTime() + durationHours * 60 * 60 * 1000);
     setCreatingSession(true);
-    await getRepository().createGroupSession({
-      startsAt: new Date(newSessionStart).toISOString(),
-      endsAt: new Date(newSessionEnd).toISOString(),
-      beginnerCapacity,
-      advancedCapacity,
-      createdByAdminId: user.id,
-      notes: newSessionNotes.trim() || undefined,
-    });
-    setNewSessionStart("");
-    setNewSessionEnd("");
-    setNewSessionBeginnerCap("4");
-    setNewSessionAdvancedCap("4");
-    setNewSessionNotes("");
-    await load();
-    setCreatingSession(false);
+    setCreateSessionError(null);
+    try {
+      await getRepository().createGroupSession({
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+        beginnerCapacity,
+        advancedCapacity,
+        createdByAdminId: user.id,
+        notes: newSessionNotes.trim() || undefined,
+      });
+      setNewSessionStartTime("10:00");
+      setNewSessionDurationHours("2");
+      setNewSessionBeginnerCap("4");
+      setNewSessionAdvancedCap("4");
+      setNewSessionNotes("");
+      await load();
+    } catch (err) {
+      setCreateSessionError(err instanceof Error ? err.message : "Session konnte nicht angelegt werden.");
+    } finally {
+      setCreatingSession(false);
+    }
   }
 
   async function handleLookupAssignCustomer() {
@@ -818,20 +837,40 @@ export default function AdminPage() {
             className="mt-2 flex flex-col gap-3 rounded-2xl border border-lf-border bg-lf-card p-5"
           >
             <div className="flex gap-3">
-              <input
-                type="datetime-local"
-                value={newSessionStart}
-                onChange={(e) => setNewSessionStart(e.target.value)}
-                required
-                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
-              />
-              <input
-                type="datetime-local"
-                value={newSessionEnd}
-                onChange={(e) => setNewSessionEnd(e.target.value)}
-                required
-                className="flex-1 rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
-              />
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Datum
+                <input
+                  type="date"
+                  value={newSessionDate}
+                  onChange={(e) => setNewSessionDate(e.target.value)}
+                  required
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Start
+                <input
+                  type="time"
+                  value={newSessionStartTime}
+                  onChange={(e) => setNewSessionStartTime(e.target.value)}
+                  required
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+              </label>
+              <label className="flex-1 text-xs font-semibold text-lf-muted">
+                Dauer
+                <select
+                  value={newSessionDurationHours}
+                  onChange={(e) => setNewSessionDurationHours(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-lf-border bg-background px-3 py-2 text-sm text-foreground"
+                >
+                  <option value="1">1 Std.</option>
+                  <option value="1.5">1,5 Std.</option>
+                  <option value="2">2 Std.</option>
+                  <option value="2.5">2,5 Std.</option>
+                  <option value="3">3 Std.</option>
+                </select>
+              </label>
             </div>
             <div className="flex gap-3">
               <label className="flex-1 text-xs font-semibold text-lf-muted">
@@ -862,6 +901,7 @@ export default function AdminPage() {
               placeholder="Notiz (optional)"
               className="rounded-lg border border-lf-border bg-background px-3 py-2 text-sm"
             />
+            {createSessionError && <p className="text-sm text-red-600">{createSessionError}</p>}
             <button
               type="submit"
               disabled={creatingSession}
