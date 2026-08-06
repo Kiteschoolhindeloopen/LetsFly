@@ -34,10 +34,15 @@ interface BookingRow {
 }
 
 const CANCELLATION_CUTOFF_MS = 3 * 24 * 60 * 60 * 1000;
+const NOW_TICK_MS = 30 * 1000;
 
 function isCancellable(row: BookingRow): boolean {
   if (row.course.category !== "PRIVATE_HOURS") return true;
   return new Date(row.slot.startsAt).getTime() - Date.now() >= CANCELLATION_CUTOFF_MS;
+}
+
+function isRunningNow(startsAt: string, endsAt: string, now: number): boolean {
+  return new Date(startsAt).getTime() <= now && now <= new Date(endsAt).getTime();
 }
 
 export default function DashboardPage() {
@@ -56,6 +61,7 @@ export default function DashboardPage() {
   const [currentWindDirectionDeg, setCurrentWindDirectionDeg] = useState<number | null>(null);
   const [currentGustKn, setCurrentGustKn] = useState<number | null>(null);
   const [windThresholds] = useState(() => getWindThresholds());
+  const [now, setNow] = useState(() => Date.now());
 
   async function load() {
     const repo = getRepository();
@@ -122,6 +128,11 @@ export default function DashboardPage() {
   }, []);
 
   useLiveRefresh(load);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), NOW_TICK_MS);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchCurrentWind()
@@ -332,12 +343,22 @@ export default function DashboardPage() {
           {upcoming.map((row) => {
             const { booking, slot, course, instructorName } = row;
             const cancellable = isCancellable(row);
+            const runningNow = isRunningNow(slot.startsAt, slot.endsAt, now);
             return (
               <div
                 key={booking.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-lf-border p-3.5"
+                className={
+                  runningNow
+                    ? "flex items-center justify-between gap-3 rounded-2xl border-2 border-lf-ocean bg-lf-ocean-light p-3.5"
+                    : "flex items-center justify-between gap-3 rounded-2xl border border-lf-border p-3.5"
+                }
               >
                 <div>
+                  {runningNow && (
+                    <span className="mb-1 inline-block rounded-full bg-lf-ocean px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      Läuft jetzt
+                    </span>
+                  )}
                   <p className="text-[13.5px] font-bold text-foreground">{course.name}</p>
                   <p className="mt-0.5 text-xs text-lf-muted">
                     {formatDateTime(slot.startsAt)}
@@ -375,16 +396,31 @@ export default function DashboardPage() {
             Diese Termine wurden dir von der Kiteschule zugewiesen — der Termin lässt sich hier nicht selbst ändern.
           </p>
           <div className="flex flex-col gap-2.5">
-            {myGroupSessions.map(({ assignment, session }) => (
-              <div key={assignment.id} className="rounded-2xl border border-lf-border p-3.5">
-                <p className="text-[13.5px] font-bold text-foreground">
-                  {formatDateTime(session.startsAt)} – {formatDateTime(session.endsAt)}
-                </p>
-                <p className="mt-0.5 text-xs text-lf-muted">
-                  Level: {assignment.level === "BEGINNER" ? "Anfänger" : "Fortgeschritten"}
-                </p>
-              </div>
-            ))}
+            {myGroupSessions.map(({ assignment, session }) => {
+              const runningNow = isRunningNow(session.startsAt, session.endsAt, now);
+              return (
+                <div
+                  key={assignment.id}
+                  className={
+                    runningNow
+                      ? "rounded-2xl border-2 border-lf-ocean bg-lf-ocean-light p-3.5"
+                      : "rounded-2xl border border-lf-border p-3.5"
+                  }
+                >
+                  {runningNow && (
+                    <span className="mb-1 inline-block rounded-full bg-lf-ocean px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      Läuft jetzt
+                    </span>
+                  )}
+                  <p className="text-[13.5px] font-bold text-foreground">
+                    {formatDateTime(session.startsAt)} – {formatDateTime(session.endsAt)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-lf-muted">
+                    Level: {assignment.level === "BEGINNER" ? "Anfänger" : "Fortgeschritten"}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
